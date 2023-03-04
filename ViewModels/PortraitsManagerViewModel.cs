@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -16,16 +17,16 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
     internal partial class PortraitsManagerViewModel : ObservableObject
     {
         [ObservableProperty]
-        private string maleFilterText;
+        private string _maleFilterText;
 
         [ObservableProperty]
-        private string femaleFilterText;
+        private string _femaleFilterText;
 
         [ObservableProperty]
-        private bool isRemindSave = false;
+        private bool _isRemindSave = false;
 
         [ObservableProperty]
-        ComboBoxVM comboBox_GroupList =
+        ComboBoxVM _comboBox_GroupList =
             new()
             {
                 new() { Content = "原版", Tag = "Vanilla" },
@@ -34,20 +35,26 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             };
 
         [ObservableProperty]
-        ObservableCollection<GroupData> mainModsList = new();
+        private ObservableCollection<GroupData> _allGroupDatas = new();
+
+        private GroupData _nowGroupData;
 
         [ObservableProperty]
-        private ObservableCollection<ListBoxItemVM> nowMalePortraitItems;
+        private ObservableCollection<ListBoxItemVM> _nowShowMalePortraitItems;
 
         [ObservableProperty]
-        private ObservableCollection<ListBoxItemVM> nowFemalePortraitItems;
+        private ObservableCollection<ListBoxItemVM> _nowShowFemalePortraitItems;
 
 
-        private ListBoxItemVM nowSelectedFactionItem;
+        private ListBoxItemVM _nowSelectedFactionItem;
+
+        internal List<ListBoxItemVM> NowSelectedMalePortraitItems { get; private set; }
+        internal List<ListBoxItemVM> NowSelectedFemalePortraitItems { get; private set; }
         public PortraitsManagerViewModel() { }
 
         public PortraitsManagerViewModel(bool noop)
         {
+            Instance = this;
             ComboBox_GroupList.SelectionChangedEvent += ComboBox_GroupList_SelectionChangedEvent;
             ComboBox_GroupList.SelectedIndex = 0;
             InitializeGroup();
@@ -77,41 +84,62 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         private void ChangeAllGroupData(string groupTypeName)
         {
-            MainModsList.Clear();
+            AllGroupDatas.Clear();
             if (groupTypeName == strVanilla)
             {
-                MainModsList.Add(GetVanillaData());
+                var groupData = GetVanillaData();
+                AllGroupDatas.Add(groupData);
+                groupData.IsExpanded = true;
             }
         }
 
         private GroupData GetVanillaData()
         {
-            var groupData = new GroupData(strVanilla, "原版", GameInfo.CoreDirectory);
+            if (GroupData.Create(strVanilla, "原版", GameInfo.CoreDirectory) is not GroupData groupData)
+                return null!;
             groupData.FactionList.SelectionChangedEvent += FactionList_SelectionChangedEvent;
             return groupData;
         }
 
         private void FactionList_SelectionChangedEvent(ListBoxItemVM item)
         {
-            if (item is null || nowSelectedFactionItem == item)
+            if (item is null || _nowSelectedFactionItem == item)
                 return;
             // 若切换选择,可取消原来的选中状态,以此达到多列表互斥
-            if (nowSelectedFactionItem?.IsSelected is true)
-                nowSelectedFactionItem.IsSelected = false;
-            nowSelectedFactionItem = item;
-            if (nowSelectedFactionItem.Tag is not GroupData groupData)
+            if (_nowSelectedFactionItem?.IsSelected is true)
+                _nowSelectedFactionItem.IsSelected = false;
+            _nowSelectedFactionItem = item;
+            if (_nowSelectedFactionItem.Tag is not GroupData groupData)
                 return;
-            NowMalePortraitItems = groupData.MaleFactionPortraitsItem[nowSelectedFactionItem.Name!];
-            NowFemalePortraitItems = groupData.FemaleFactionPortraitsItem[nowSelectedFactionItem.Name!];
+            _nowGroupData = groupData;
+            NowShowMalePortraitItems = groupData.MaleFactionPortraitsItem[_nowSelectedFactionItem.Name!];
+            NowShowFemalePortraitItems = groupData.FemaleFactionPortraitsItem[_nowSelectedFactionItem.Name!];
         }
 
         [RelayCommand]
-        internal void Save() { }
+        internal void Save()
+        {
+            foreach (var groupData in AllGroupDatas)
+                groupData.Save();
+            IsRemindSave = false;
+        }
 
         [RelayCommand]
         private void MaleFilterTextChange(string value) { }
 
         [RelayCommand]
         private void FemaleFilterTextChange(string value) { }
+
+        [RelayCommand]
+        private void MaleSelectionChanged(IList values)
+        {
+            NowSelectedMalePortraitItems = new(values.OfType<ListBoxItemVM>());
+        }
+
+        [RelayCommand]
+        private void FemaleSelectionChanged(IList values)
+        {
+            NowSelectedFemalePortraitItems = new(values.OfType<ListBoxItemVM>());
+        }
     }
 }

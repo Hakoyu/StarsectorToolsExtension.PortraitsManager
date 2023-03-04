@@ -13,44 +13,37 @@ using System.Windows.Media.Imaging;
 using HKW.Libs.Log4Cs;
 using StarsectorTools.Libs.Utils;
 
-namespace StarsectorToolsExtension.PortraitsManager
+namespace StarsectorToolsExtension.PortraitsManager.Models
 {
-    public enum Gender
-    {
-        All,
-        Male,
-        Female,
-    }
 
     /// <summary>
     /// 势力肖像
     /// </summary>
-    public class FactionPortraits : IEnumerable, IEnumerable<string>
+    public class FactionPortrait : IEnumerable, IEnumerable<string>
     {
         private const string strFactionExtension = ".faction";
         private const string strStandardMale = "standard_male";
         private const string strStandardFemale = "standard_female";
         private const string strPortraits = "portraits";
         private const string strDisplayName = "displayName";
+
+        public bool IsChanged { get; private set; } = false;
         public string FactionId { get; private set; } = null!;
         public string? FactionName { get; private set; } = null;
         public string BaseDirectory { get; private set; } = null!;
         public string FileName { get; private set; } = null!;
         public string FileFullName { get; private set; } = null!;
 
-        private HashSet<string> malePortraitsPath = new();
-        public IReadOnlySet<string> MalePortraitsPath => malePortraitsPath;
+        private HashSet<string> _malePortraitsPath = new();
+        public IReadOnlySet<string> MalePortraitsPath => _malePortraitsPath;
 
-        private readonly HashSet<string> femalePortraitsPath = new();
-        public IReadOnlySet<string> FemalePortraitsPath => femalePortraitsPath;
+        private readonly HashSet<string> _femalePortraitsPath = new();
+        public IReadOnlySet<string> FemalePortraitsPath => _femalePortraitsPath;
 
-        private HashSet<string> allPortraitsPath = new();
-        public IReadOnlySet<string> AllPortraitsPath => allPortraitsPath;
+        private HashSet<string> _allPortraitsPath = new();
+        public IReadOnlySet<string> AllPortraitsPath => _allPortraitsPath;
 
-        private Dictionary<string, string> allPortraitsName = new();
-        public ReadOnlyDictionary<string, string> AllPortraitsName => new(allPortraitsName);
-
-        private FactionPortraits(
+        private FactionPortrait(
             JsonObject jsonObject,
             JsonObject portraitsObject,
             string file,
@@ -59,10 +52,10 @@ namespace StarsectorToolsExtension.PortraitsManager
         )
         {
             errMessage = string.Empty;
-            FactionName = FactionId = Path.GetFileNameWithoutExtension(file);
-            BaseDirectory = baseDirectory;
-            FileName = Path.GetFileName(file);
             FileFullName = file;
+            FileName = Path.GetFileName(file);
+            FactionName = FactionId = Path.GetFileNameWithoutExtension(FileName);
+            BaseDirectory = baseDirectory;
             StringBuilder? errMale = GetMalePortraits(portraitsObject);
             StringBuilder? errFemale = GetFemalePortraits(portraitsObject);
             if (
@@ -91,9 +84,8 @@ namespace StarsectorToolsExtension.PortraitsManager
                     errSB.AppendLine($"\t{path}");
                     continue;
                 }
-                malePortraitsPath.Add(path);
-                allPortraitsPath.Add(path);
-                allPortraitsName.TryAdd(path, Path.GetFileNameWithoutExtension(path));
+                _malePortraitsPath.Add(path);
+                _allPortraitsPath.Add(path);
             }
             return errSB.Length > 0 ? errSB.Insert(0, "\n男性肖像路径错误:") : null;
         }
@@ -114,14 +106,13 @@ namespace StarsectorToolsExtension.PortraitsManager
                     errSB.AppendLine($"\t{path}");
                     continue;
                 }
-                femalePortraitsPath.Add(path);
-                allPortraitsPath.Add(path);
-                allPortraitsName.TryAdd(path, Path.GetFileNameWithoutExtension(path));
+                _femalePortraitsPath.Add(path);
+                _allPortraitsPath.Add(path);
             }
             return errSB.Length > 0 ? errSB.Insert(0, "\n女性肖像路径错误:") : null;
         }
 
-        public static FactionPortraits? Create(
+        public static FactionPortrait? Create(
             string file,
             string baseDirectory,
             out string errMessage
@@ -141,97 +132,85 @@ namespace StarsectorToolsExtension.PortraitsManager
             return new(jsonObject, portraitsObject, file, baseDirectory, out errMessage);
         }
 
-        public bool Add(string path, Gender? gender = null)
+        public bool Add(string path, Gender gender = Gender.All)
         {
             var fullPath = Path.Combine(BaseDirectory, path);
-            if (!File.Exists(fullPath) || allPortraitsPath.Contains(fullPath))
+            if (!File.Exists(fullPath) || _allPortraitsPath.Contains(fullPath))
                 return false;
+            IsChanged = true;
             if (gender is Gender.Male)
             {
-                allPortraitsPath.Add(path);
-                allPortraitsName.TryAdd(path, Path.GetFileNameWithoutExtension(path));
-                return malePortraitsPath.Add(path);
+                _allPortraitsPath.Add(path);
+                return _malePortraitsPath.Add(path);
             }
             else if (gender is Gender.Female)
             {
-                allPortraitsPath.Add(path);
-                allPortraitsName.TryAdd(path, Path.GetFileNameWithoutExtension(path));
-                return femalePortraitsPath.Add(path);
+                _allPortraitsPath.Add(path);
+                return _femalePortraitsPath.Add(path);
             }
             else
             {
-                malePortraitsPath.Add(path);
-                femalePortraitsPath.Add(path);
-                allPortraitsName.TryAdd(path, Path.GetFileNameWithoutExtension(path));
-                return allPortraitsPath.Add(path);
+                _malePortraitsPath.Add(path);
+                _femalePortraitsPath.Add(path);
+                return _allPortraitsPath.Add(path);
             }
         }
 
-        public bool Remove(string path, Gender? gender = null)
+        public bool Remove(string path, Gender gender = Gender.All)
         {
+            IsChanged = true;
             if (gender is Gender.Male)
             {
-                if (!femalePortraitsPath.Contains(path))
-                {
-                    allPortraitsPath.Remove(path);
-                    allPortraitsName.Remove(path);
-                }
-                return malePortraitsPath.Remove(path);
+                if (!_femalePortraitsPath.Contains(path))
+                    _allPortraitsPath.Remove(path);
+                return _malePortraitsPath.Remove(path);
             }
             else if (gender is Gender.Female)
             {
-                if (!malePortraitsPath.Contains(path))
-                {
-                    allPortraitsPath.Remove(path);
-                    allPortraitsName.Remove(path);
-                }
-                return femalePortraitsPath.Remove(path);
+                if (!_malePortraitsPath.Contains(path))
+                    _allPortraitsPath.Remove(path);
+                return _femalePortraitsPath.Remove(path);
             }
             else
             {
-                malePortraitsPath.Remove(path);
-                femalePortraitsPath.Remove(path);
-                allPortraitsName.Remove(path);
-                return allPortraitsPath.Remove(path);
+                _malePortraitsPath.Remove(path);
+                _femalePortraitsPath.Remove(path);
+                return _allPortraitsPath.Remove(path);
             }
         }
 
-        public void Clear(Gender? gender = null)
+        public void Clear(Gender gender = Gender.All)
         {
+            IsChanged = true;
             if (gender is Gender.Male)
             {
-                foreach (var path in malePortraitsPath)
+                foreach (var path in _malePortraitsPath)
                 {
-                    if (!femalePortraitsPath.Contains(path))
-                    {
-                        allPortraitsPath.Remove(path);
-                        allPortraitsName.Remove(path);
-                    }
+                    if (!_femalePortraitsPath.Contains(path))
+                        _allPortraitsPath.Remove(path);
                 }
-                malePortraitsPath.Clear();
+                _malePortraitsPath.Clear();
             }
             else if (gender is Gender.Female)
             {
-                foreach (var path in femalePortraitsPath)
+                foreach (var path in _femalePortraitsPath)
                 {
-                    if (!malePortraitsPath.Contains(path))
-                    {
-                        allPortraitsPath.Remove(path);
-                        allPortraitsName.Remove(path);
-                    }
+                    if (!_malePortraitsPath.Contains(path))
+                        _allPortraitsPath.Remove(path);
                 }
-                femalePortraitsPath.Clear();
+                _femalePortraitsPath.Clear();
             }
             else
             {
-                malePortraitsPath.Clear();
-                femalePortraitsPath.Clear();
-                allPortraitsPath.Clear();
-                allPortraitsName.Clear();
+                _malePortraitsPath.Clear();
+                _femalePortraitsPath.Clear();
+                _allPortraitsPath.Clear();
             }
         }
+        public bool Save() => SaveTo(FileFullName, false);
 
-        public bool SaveTo(string file, bool createNew = false)
+        public bool SaveTo(string file) => SaveTo(file, true);
+        private bool SaveTo(string file, bool createNew = false)
         {
             try
             {
@@ -267,10 +246,13 @@ namespace StarsectorToolsExtension.PortraitsManager
             }
             catch (Exception ex)
             {
-                Logger.Error("???", ex);
+                Logger.Error($"保存势力肖像时出现错误\n势力: {FactionName} 文件路径: {file}", ex);
                 return false;
             }
         }
+
+        public static string? TryGetFactionPortraitData(string file) =>
+            Regex.Match(File.ReadAllText(file), @"[ \t]*""portraits"":[^}]*}").Value;
 
         public IEnumerator<string> GetEnumerator() => AllPortraitsPath.GetEnumerator();
 

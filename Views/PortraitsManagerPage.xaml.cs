@@ -15,6 +15,7 @@ using System.Windows.Navigation;
 using CommunityToolkit.Mvvm.ComponentModel;
 using HKW.ViewModels.Dialogs;
 using StarsectorTools.Libs.Utils;
+using StarsectorToolsExtension.PortraitsManager.Models;
 using StarsectorToolsExtension.PortraitsManager.ViewModels;
 
 namespace StarsectorToolsExtension.PortraitsManager.Views
@@ -35,48 +36,11 @@ namespace StarsectorToolsExtension.PortraitsManager.Views
             //ComboBox_GroupList.SelectedIndex = 0;
         }
 
-        private void ComboBox_GroupList_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (sender is ComboBox comboBox && comboBox.SelectedItem is ComboBoxItem item)
-            {
-                ChangeGroupsType(item.Tag.ToString()!);
-            }
-        }
-
-        private void TextBox_MaleSearchPortraits_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            MaleSearchPortraits(nowGroup, nowFaction);
-        }
-
-
-        private void TextBox_FemaleSearchPortraits_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            FemaleSearchPortraits(nowGroup, nowFaction);
-        }
-
-        private void Button_Save_Click(object sender, RoutedEventArgs e)
-        {
-            Save();
-        }
-
         private void ListBox_MalePortraitsList_Drop(object sender, DragEventArgs e)
         {
             if (e.Data.GetData(DataFormats.FileDrop) is Array pathArray)
             {
-                if (string.IsNullOrEmpty(nowFaction))
-                {
-                    MessageBoxVM.Show(new("必须选择势力"));
-                    return;
-                }
-                foreach (string path in pathArray)
-                {
-                    if (File.Exists(path))
-                        DropFile(path, Gender.Male);
-                    else if (Directory.Exists(path))
-                        DropDirectory(path, Gender.Male);
-                }
-                RefreshPortraits(nowGroup, nowFaction, Gender.Male);
-                RefreshGroupImagesCount(nowGroup);
+                ViewModel.DropPortraitFiles(pathArray, Gender.Male);
             }
         }
 
@@ -84,20 +48,7 @@ namespace StarsectorToolsExtension.PortraitsManager.Views
         {
             if (e.Data.GetData(DataFormats.FileDrop) is Array pathArray)
             {
-                if (string.IsNullOrEmpty(nowFaction))
-                {
-                    MessageBoxVM.Show(new("必须选择势力"));
-                    return;
-                }
-                foreach (string path in pathArray)
-                {
-                    if (File.Exists(path))
-                        DropFile(path, Gender.Male);
-                    else if (Directory.Exists(path))
-                        DropDirectory(path, Gender.Male);
-                }
-                RefreshPortraits(nowGroup, nowFaction, Gender.Female);
-                RefreshGroupImagesCount(nowGroup);
+                ViewModel.DropPortraitFiles(pathArray, Gender.Female);
             }
         }
 
@@ -108,7 +59,17 @@ namespace StarsectorToolsExtension.PortraitsManager.Views
 
         public string GetDescriptionI18n()
         {
-            return "";
+            return "肖像管理器";
+        }
+
+        public void Save()
+        {
+            ViewModel.Save();
+        }
+
+        public void Close()
+        {
+            ViewModel.Close();
         }
     }
 }

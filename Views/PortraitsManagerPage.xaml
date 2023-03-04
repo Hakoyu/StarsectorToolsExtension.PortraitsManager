@@ -32,6 +32,21 @@
             <Setter Property="Height" Value="130" />
             <Setter Property="Width" Value="100" />
             <Setter Property="Padding" Value="0" />
+            <Setter Property="ContextMenu">
+              <Setter.Value>
+                <ContextMenu
+                  ItemContainerStyle="{StaticResource MenuItemView2ListBoxItem}"
+                  ItemsSource="{Binding ContextMenu.ItemsSource}"
+                  Style="{StaticResource ContextMenuBaseStyle}">
+                  <i:Interaction.Triggers>
+                    <!--  使用Loaded时,如果有多个未载入的菜单,使用右键挨个点击只会载入第一个,故使用Opened  -->
+                    <i:EventTrigger EventName="Opened">
+                      <i:InvokeCommandAction Command="{Binding ContextMenu.LoadedCommand}" />
+                    </i:EventTrigger>
+                  </i:Interaction.Triggers>
+                </ContextMenu>
+              </Setter.Value>
+            </Setter>
           </Style>
           <!--#endregion-->
           <!--#region DataTemplate-->
@@ -39,6 +54,7 @@
             <Expander
               Padding="0"
               Header="{Binding Header}"
+              IsExpanded="{Binding IsExpanded}"
               Style="{StaticResource ExpanderSelectedItem}"
               ToolTip="{Binding ToolTip}">
               <ListBox
@@ -61,12 +77,12 @@
                 Width="100"
                 Height="100"
                 DataContext="{Binding DataContext, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListBoxItem}}"
-                Source="{Binding Tag}">
+                Source="{Binding DataContext.Tag, RelativeSource={RelativeSource Mode=Self}}">
                 <Image.ToolTip>
                   <Image
                     Width="256"
                     Height="256"
-                    Source="{Binding Tag}" />
+                    Source="{Binding DataContext.Tag, RelativeSource={RelativeSource Mode=Self}}" />
                 </Image.ToolTip>
               </Image>
               <Label
@@ -112,7 +128,7 @@
           Margin="0,35,5,0"
           ScrollViewer.VerticalScrollBarVisibility="Auto">
           <StackPanel x:Name="StackPanel_GroupList" MinWidth="100">
-            <ItemsControl ItemTemplate="{StaticResource ModFactionList}" ItemsSource="{Binding MainModsList, IsAsync=True}" />
+            <ItemsControl ItemTemplate="{StaticResource ModFactionList}" ItemsSource="{Binding AllGroupDatas, IsAsync=True}" />
           </StackPanel>
         </ScrollViewer>
         <GroupBox
@@ -170,7 +186,7 @@
               Drop="ListBox_MalePortraitsList_Drop"
               ItemContainerStyle="{StaticResource PortraitItem}"
               ItemTemplate="{StaticResource PortraitImageItem}"
-              ItemsSource="{Binding NowMalePortraitItems, IsAsync=True}"
+              ItemsSource="{Binding NowShowMalePortraitItems, IsAsync=True}"
               SelectionMode="Extended"
               Style="{StaticResource ListBoxBaseStyle}">
               <ListBox.ItemsPanel>
@@ -178,6 +194,11 @@
                   <WrapPanel />
                 </ItemsPanelTemplate>
               </ListBox.ItemsPanel>
+              <i:Interaction.Triggers>
+                <i:EventTrigger EventName="SelectionChanged">
+                  <i:InvokeCommandAction Command="{Binding MaleSelectionChangedCommand}" CommandParameter="{Binding SelectedItems, ElementName=ListBox_MalePortraitsList}" />
+                </i:EventTrigger>
+              </i:Interaction.Triggers>
             </ListBox>
           </Grid>
         </GroupBox>
@@ -243,7 +264,7 @@
               Drop="ListBox_MalePortraitsList_Drop"
               ItemContainerStyle="{StaticResource PortraitItem}"
               ItemTemplate="{StaticResource PortraitImageItem}"
-              ItemsSource="{Binding NowFemalePortraitItems, IsAsync=True}"
+              ItemsSource="{Binding NowShowFemalePortraitItems, IsAsync=True}"
               SelectionMode="Extended"
               Style="{StaticResource ListBoxBaseStyle}">
               <ListBox.ItemsPanel>
@@ -251,6 +272,11 @@
                   <WrapPanel />
                 </ItemsPanelTemplate>
               </ListBox.ItemsPanel>
+              <i:Interaction.Triggers>
+                <i:EventTrigger EventName="SelectionChanged">
+                  <i:InvokeCommandAction Command="{Binding FemaleSelectionChangedCommand}" CommandParameter="{Binding SelectedItems, ElementName=ListBox_FemalePortraitsList}" />
+                </i:EventTrigger>
+              </i:Interaction.Triggers>
             </ListBox>
           </Grid>
         </GroupBox>
@@ -316,10 +342,9 @@
             x:Name="Button_Save"
             Height="30"
             VerticalAlignment="Bottom"
-            Click="Button_Save_Click"
+            Command="{Binding SaveCommand}"
             Content="保存配置"
-            Style="{StaticResource RemindStyle}"
-            Tag="False" />
+            Style="{StaticResource RemindStyle}" />
         </Grid>
       </Grid>
     </GroupBox>
