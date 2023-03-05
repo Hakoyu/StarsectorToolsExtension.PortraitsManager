@@ -33,7 +33,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 MessageBoxVM.Show(new("你必须选择一个势力"));
                 return;
             }
-            _nowGroupData.TryAddPortrait(array.OfType<string>(), _nowSelectedFactionItem.Name!, gender);
+            _nowGroupData.TryAddPortrait(array.OfType<string>(), _nowSelectedFactionItem.Id!, gender);
             IsRemindSave = true;
         }
     }

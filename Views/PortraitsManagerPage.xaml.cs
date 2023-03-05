@@ -33,7 +33,18 @@ namespace StarsectorToolsExtension.PortraitsManager.Views
         {
             InitializeComponent();
             DataContext = new PortraitsManagerViewModel(true);
-            //ComboBox_GroupList.SelectedIndex = 0;
+        }
+
+        private void ListBox_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            var eventArg = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+            {
+                RoutedEvent = MouseWheelEvent,
+                Source = sender,
+            };
+            if (sender is Control control && control.Parent is UIElement ui)
+                ui.RaiseEvent(eventArg);
+            e.Handled = true;
         }
 
         private void ListBox_MalePortraitsList_Drop(object sender, DragEventArgs e)

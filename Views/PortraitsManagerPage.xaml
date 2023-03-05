@@ -5,7 +5,7 @@
   xmlns:ModTypeGroup="clr-namespace:StarsectorTools.Libs.Utils;assembly=StarsectorTools"
   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
   xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
-  xmlns:local="clr-namespace:StarsectorToolsExtension.PortraitsManager"
+  xmlns:local="clr-namespace:StarsectorToolsExtension.PortraitsManager.Views"
   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
   xmlns:vm="clr-namespace:StarsectorToolsExtension.PortraitsManager.ViewModels"
   Title="PortraitsManager"
@@ -25,7 +25,7 @@
           <!--#region Style-->
           <Style
             x:Key="PortraitItem"
-            BasedOn="{StaticResource ListBoxItemBaseStyle}"
+            BasedOn="{StaticResource ListBoxItemHighLightStyle}"
             TargetType="ListBoxItem">
             <Setter Property="Tag" Value="{Binding Tag}" />
             <Setter Property="ToolTip" Value="{Binding ToolTip}" />
@@ -60,6 +60,7 @@
               <ListBox
                 ItemContainerStyle="{StaticResource ListBoxItemView}"
                 ItemsSource="{Binding FactionList.ItemsSource}"
+                PreviewMouseWheel="ListBox_PreviewMouseWheel"
                 ScrollViewer.VerticalScrollBarVisibility="Hidden"
                 SelectedItem="{Binding FactionList.SelectedItem}"
                 Style="{StaticResource ListBoxBaseStyle}">
@@ -134,21 +135,14 @@
         <GroupBox
           x:Name="GroupBox_MalePortraits"
           Grid.Column="1"
-          Header="Male"
-          Style="{StaticResource GroupBoxBaseStyle}"
-          Tag="Male">
+          Header="{Binding MaleGroupBoxHeader}"
+          Style="{StaticResource GroupBoxBaseStyle}">
           <Grid>
             <TextBox
               x:Name="TextBox_MaleSearchPortraits"
               VerticalAlignment="Top"
               Style="{StaticResource TextBoxBaseStyle}"
-              Text="{Binding MaleFilterText}">
-              <i:Interaction.Triggers>
-                <i:EventTrigger EventName="TextChanged">
-                  <i:InvokeCommandAction Command="{Binding MaleFilterTextChangeCommand}" CommandParameter="{Binding MaleFilterText}" />
-                </i:EventTrigger>
-              </i:Interaction.Triggers>
-            </TextBox>
+              Text="{Binding MalePortraitFilterText, UpdateSourceTrigger=PropertyChanged}" />
             <!--  TextBox输入占位符  -->
             <Label
               Width="{Binding Width, ElementName=TextBox_MaleSearchPortraits}"
@@ -212,21 +206,14 @@
         <GroupBox
           x:Name="GroupBox_FemalePortraits"
           Grid.Column="3"
-          Header="Female"
-          Style="{StaticResource GroupBoxBaseStyle}"
-          Tag="Female">
+          Header="{Binding FemaleGroupBoxHeader}"
+          Style="{StaticResource GroupBoxBaseStyle}">
           <Grid>
             <TextBox
               x:Name="TextBox_FemaleSearchPortraits"
               VerticalAlignment="Top"
               Style="{StaticResource TextBoxBaseStyle}"
-              Text="{Binding FemaleFilterText}">
-              <i:Interaction.Triggers>
-                <i:EventTrigger EventName="TextChanged">
-                  <i:InvokeCommandAction Command="{Binding FemaleFilterTextChangeCommand}" CommandParameter="{Binding FemaleFilterText}" />
-                </i:EventTrigger>
-              </i:Interaction.Triggers>
-            </TextBox>
+              Text="{Binding FemalePortraitFilterText, UpdateSourceTrigger=PropertyChanged}" />
             <!--  TextBox输入占位符  -->
             <Label
               Width="{Binding Width, ElementName=TextBox_FemaleSearchPortraits}"

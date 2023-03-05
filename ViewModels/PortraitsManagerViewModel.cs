@@ -17,10 +17,18 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
     internal partial class PortraitsManagerViewModel : ObservableObject
     {
         [ObservableProperty]
-        private string _maleFilterText;
+        private string _maleGroupBoxHeader = "男性肖像";
 
         [ObservableProperty]
-        private string _femaleFilterText;
+        private string _femaleGroupBoxHeader = "女性肖像";
+
+        [ObservableProperty]
+        private string _malePortraitFilterText;
+        partial void OnMalePortraitFilterTextChanged(string value) => MalePortraitFilter(value);
+
+        [ObservableProperty]
+        private string _femalePortraitFilterText;
+        partial void OnFemalePortraitFilterTextChanged(string value) => FemalePortraitFilter(value);
 
         [ObservableProperty]
         private bool _isRemindSave = false;
@@ -42,14 +50,24 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         [ObservableProperty]
         private ObservableCollection<ListBoxItemVM> _nowShowMalePortraitItems;
 
+        partial void OnNowShowMalePortraitItemsChanged(ObservableCollection<ListBoxItemVM> value)
+        {
+            MaleGroupBoxHeader = $"男性肖像 ({NowShowMalePortraitItems.Count})";
+        }
+
         [ObservableProperty]
         private ObservableCollection<ListBoxItemVM> _nowShowFemalePortraitItems;
 
+        partial void OnNowShowFemalePortraitItemsChanged(ObservableCollection<ListBoxItemVM> value)
+        {
+            FemaleGroupBoxHeader = $"女性肖像 ({NowShowFemalePortraitItems.Count})";
+        }
 
         private ListBoxItemVM _nowSelectedFactionItem;
 
         internal List<ListBoxItemVM> NowSelectedMalePortraitItems { get; private set; }
         internal List<ListBoxItemVM> NowSelectedFemalePortraitItems { get; private set; }
+
         public PortraitsManagerViewModel() { }
 
         public PortraitsManagerViewModel(bool noop)
@@ -72,30 +90,65 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         private void GetAllUserGroup()
         {
-            //foreach (var group in ModsInfo.AllUserGroups)
-            //{
-            //    ComboBox_GroupList.Add(new()
-            //    {
-            //        Content = group.Key,
-            //        Tag = group.Key
-            //    });
-            //}
+            foreach (var group in ModsInfo.AllUserGroups)
+            {
+                ComboBox_GroupList.Add(new() { Content = group.Key, Tag = group.Key });
+            }
         }
 
         private void ChangeAllGroupData(string groupTypeName)
         {
+            Close();
             AllGroupDatas.Clear();
             if (groupTypeName == strVanilla)
             {
-                var groupData = GetVanillaData();
+                var groupData = GetGroupData(strVanilla, "原版", GameInfo.CoreDirectory)!;
                 AllGroupDatas.Add(groupData);
                 groupData.IsExpanded = true;
             }
+            else if (groupTypeName == nameof(ModTypeGroup.Enabled))
+            {
+                GetEnabledModsGroupData();
+            }
+            else if (groupTypeName == nameof(ModTypeGroup.Collected))
+            {
+                GetCollectedModsGroupData();
+            }
+            else { }
+            GC.Collect();
         }
 
-        private GroupData GetVanillaData()
+        private void GetEnabledModsGroupData()
         {
-            if (GroupData.Create(strVanilla, "原版", GameInfo.CoreDirectory) is not GroupData groupData)
+            foreach (var group in ModsInfo.AllEnabledModsId)
+            {
+                var modInfo = ModsInfo.AllModsInfo[group];
+                if (
+                    GetGroupData(modInfo.Id, modInfo.Name, modInfo.ModDirectory)
+                    is not GroupData groupData
+                )
+                    continue;
+                AllGroupDatas.Add(groupData);
+            }
+        }
+
+        private void GetCollectedModsGroupData()
+        {
+            foreach (var group in ModsInfo.AllCollectedModsId)
+            {
+                var modInfo = ModsInfo.AllModsInfo[group];
+                if (
+                    GetGroupData(modInfo.Id, modInfo.Name, modInfo.ModDirectory)
+                    is not GroupData groupData
+                )
+                    continue;
+                AllGroupDatas.Add(groupData);
+            }
+        }
+
+        private GroupData? GetGroupData(string groupId, string groupName, string baseDirectory)
+        {
+            if (GroupData.Create(groupId, groupName, baseDirectory) is not GroupData groupData)
                 return null!;
             groupData.FactionList.SelectionChangedEvent += FactionList_SelectionChangedEvent;
             return groupData;
@@ -112,8 +165,16 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             if (_nowSelectedFactionItem.Tag is not GroupData groupData)
                 return;
             _nowGroupData = groupData;
-            NowShowMalePortraitItems = groupData.MaleFactionPortraitsItem[_nowSelectedFactionItem.Name!];
-            NowShowFemalePortraitItems = groupData.FemaleFactionPortraitsItem[_nowSelectedFactionItem.Name!];
+            MalePortraitFilterText = string.Empty;
+            FemalePortraitFilterText = string.Empty;
+            NowShowMalePortraitItems = groupData.MaleFactionPortraitsItem[
+                _nowSelectedFactionItem.Id!
+            ];
+            NowShowFemalePortraitItems = groupData.FemaleFactionPortraitsItem[
+                _nowSelectedFactionItem.Id!
+            ];
+            NowShowMalePortraitItems.CollectionChanged += (s, e) => MalePortraitFilter(MalePortraitFilterText);
+            NowShowFemalePortraitItems.CollectionChanged += (s, e) => FemalePortraitFilter(FemalePortraitFilterText);
         }
 
         [RelayCommand]
@@ -124,11 +185,47 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             IsRemindSave = false;
         }
 
-        [RelayCommand]
-        private void MaleFilterTextChange(string value) { }
+        private void MalePortraitFilter(string filterText)
+        {
+            if (_nowGroupData is null)
+                return;
+            if (string.IsNullOrWhiteSpace(filterText))
+            {
+                NowShowMalePortraitItems = _nowGroupData.MaleFactionPortraitsItem[_nowSelectedFactionItem.Id!];
+            }
+            else
+            {
+                NowShowMalePortraitItems = new(
+                    _nowGroupData.MaleFactionPortraitsItem[_nowSelectedFactionItem.Id!].Where(
+                        i =>
+                            i.Name!
+                                .ToString()!
+                                .Contains(filterText, StringComparison.OrdinalIgnoreCase)
+                    )
+                );
+            }
+        }
 
-        [RelayCommand]
-        private void FemaleFilterTextChange(string value) { }
+        private void FemalePortraitFilter(string filterText)
+        {
+            if (_nowGroupData is null)
+                return;
+            if (string.IsNullOrWhiteSpace(filterText))
+            {
+                NowShowFemalePortraitItems = _nowGroupData.FemaleFactionPortraitsItem[_nowSelectedFactionItem.Id!];
+            }
+            else
+            {
+                NowShowFemalePortraitItems = new(
+                    _nowGroupData.FemaleFactionPortraitsItem[_nowSelectedFactionItem.Id!].Where(
+                        i =>
+                            i.Content!
+                                .ToString()!
+                                .Contains(filterText, StringComparison.OrdinalIgnoreCase)
+                    )
+                );
+            }
+        }
 
         [RelayCommand]
         private void MaleSelectionChanged(IList values)

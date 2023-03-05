@@ -44,6 +44,11 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         [ObservableProperty]
         private string _header = string.Empty;
 
+        partial void OnHeaderChanged(string vaule)
+        {
+            _header = $"{vaule} ({_allImageStream.Count})";
+        }
+
         [ObservableProperty]
         private string _toolTip = string.Empty;
 
@@ -72,7 +77,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         private GroupData(string groupId, string groupName, string baseDirectory)
         {
-            Header = ToolTip = groupName;
+            ToolTip = groupName;
             GroupId = groupId;
             BaseDirectory = baseDirectory;
             FactionDirectory = $"{baseDirectory}\\data\\world\\factions";
@@ -83,6 +88,28 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             PMBackupDirectory = $"{PMDirectory}\\Backup";
             PMFactionBackupDirectory = $"{PMBackupDirectory}\\Faction";
             GetFactions(BaseDirectory, FactionDirectory);
+            RefreshDispalyData();
+        }
+
+        private void RefreshDispalyData()
+        {
+            RefreshHeader();
+            RefreshFactionItems();
+        }
+
+        private void RefreshHeader()
+        {
+            Header = ToolTip;
+        }
+
+        private void RefreshFactionItems()
+        {
+            foreach (var item in FactionList)
+            {
+                var factionId = item.Id!;
+                var factionName = item.Name!;
+                item.Content = $"{factionName} ({MaleFactionPortraitsItem[factionId].Count},{FemaleFactionPortraitsItem[factionId].Count})";
+            }
         }
 
         public static GroupData? Create(string groupId, string groupName, string baseDirectory)
@@ -156,7 +183,8 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         {
             return new()
             {
-                Name = faction,
+                Id = faction,
+                Name = GetVanillaFactionI18n(faction),
                 Content = GetVanillaFactionI18n(faction),
                 ToolTip = factionPath,
                 Tag = this,
@@ -271,7 +299,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 {
                     if (
                         MessageBoxVM.Show(
-                            new($"此肖像 {portraitPath} 为分组 {GroupId} 唯一引用的位置\n解除引用将删除文件, 你确定吗?")
+                            new($"以下肖像为分组 {ToolTip} 唯一引用的位置. 解除引用将删除文件, 你确定吗?\n{portraitPath}")
                             {
                                 Button = MessageBoxVM.Button.YesNo,
                                 Icon = MessageBoxVM.Icon.Question
@@ -285,6 +313,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 nowShowPortraitItems.Remove(item);
                 factionPortrait.Remove(portraitPath, gender);
             }
+            RefreshDispalyData();
             PortraitsManagerViewModel.Instance.IsRemindSave = true;
         }
         #endregion
@@ -317,6 +346,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 UnreferenceAllPortrait(portraitPath);
                 _planToDeletePortraitPaths.Add(portraitPath);
             }
+            RefreshDispalyData();
             PortraitsManagerViewModel.Instance.IsRemindSave = true;
         }
 
@@ -366,8 +396,8 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                     continue;
                 }
                 AddPortraitFile(commonPath, path, faction, gender);
-
             }
+            RefreshDispalyData();
         }
         public List<FileInfo> AddPortraitDirectory(string directory) =>
             Utils.GetAllSubFiles(directory);
