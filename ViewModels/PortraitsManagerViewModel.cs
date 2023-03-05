@@ -94,7 +94,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         private void GetAllUserGroup()
         {
-            foreach (var group in ModsInfo.AllUserGroups)
+            foreach (var group in ModInfos.AllUserGroups)
             {
                 ComboBox_GroupList.Add(new() { Content = group.Key, Tag = group.Key });
             }
@@ -147,9 +147,9 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         private void GetEnabledModsGroupData()
         {
-            foreach (var modId in ModsInfo.AllEnabledModsId)
+            foreach (var modId in ModInfos.AllEnabledModIds)
             {
-                var modInfo = ModsInfo.AllModsInfo[modId];
+                var modInfo = ModInfos.AllModInfos[modId];
                 if (
                     GetGroupData(modInfo.Id, modInfo.Name, modInfo.ModDirectory)
                     is not GroupData groupData
@@ -161,9 +161,9 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         private void GetCollectedModsGroupData()
         {
-            foreach (var modId in ModsInfo.AllCollectedModsId)
+            foreach (var modId in ModInfos.AllCollectedModIds)
             {
-                var modInfo = ModsInfo.AllModsInfo[modId];
+                var modInfo = ModInfos.AllModInfos[modId];
                 if (
                     GetGroupData(modInfo.Id, modInfo.Name, modInfo.ModDirectory)
                     is not GroupData groupData
@@ -175,9 +175,9 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         private void GetUserGroupGroupData(string userGroup)
         {
-            foreach (var modId in ModsInfo.AllUserGroups[userGroup])
+            foreach (var modId in ModInfos.AllUserGroups[userGroup])
             {
-                var modInfo = ModsInfo.AllModsInfo[modId];
+                var modInfo = ModInfos.AllModInfos[modId];
                 if (
                     GetGroupData(modInfo.Id, modInfo.Name, modInfo.ModDirectory)
                     is not GroupData groupData
