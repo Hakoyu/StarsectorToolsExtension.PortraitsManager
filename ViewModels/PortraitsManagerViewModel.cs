@@ -7,7 +7,9 @@ using System.Text;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using HKW.Libs.Log4Cs;
 using HKW.ViewModels.Controls;
+using HKW.ViewModels.Dialogs;
 using StarsectorTools.Libs.GameInfo;
 using StarsectorTools.Libs.Utils;
 using StarsectorToolsExtension.PortraitsManager.Models;
@@ -24,10 +26,12 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         [ObservableProperty]
         private string _malePortraitFilterText;
+
         partial void OnMalePortraitFilterTextChanged(string value) => MalePortraitFilter(value);
 
         [ObservableProperty]
         private string _femalePortraitFilterText;
+
         partial void OnFemalePortraitFilterTextChanged(string value) => FemalePortraitFilter(value);
 
         [ObservableProperty]
@@ -37,7 +41,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         ComboBoxVM _comboBox_GroupList =
             new()
             {
-                new() { Content = "原版", Tag = "Vanilla" },
+                new() { Content = "原版", Tag = _StrVanilla },
                 new() { Content = "已启用模组", Tag = nameof(ModTypeGroup.Enabled) },
                 new() { Content = "已收藏模组", Tag = nameof(ModTypeGroup.Collected) }
             };
@@ -96,13 +100,15 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             }
         }
 
+        #region ChangeAllGroupData
         private void ChangeAllGroupData(string groupTypeName)
         {
+            CheckRemindSave();
             Close();
             AllGroupDatas.Clear();
-            if (groupTypeName == strVanilla)
+            if (groupTypeName == _StrVanilla)
             {
-                var groupData = GetGroupData(strVanilla, "原版", GameInfo.CoreDirectory)!;
+                var groupData = GetGroupData(_StrVanilla, "原版", GameInfo.CoreDirectory)!;
                 AllGroupDatas.Add(groupData);
                 groupData.IsExpanded = true;
             }
@@ -114,15 +120,36 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             {
                 GetCollectedModsGroupData();
             }
-            else { }
+            else
+            {
+                GetUserGroupGroupData(groupTypeName);
+            }
             GC.Collect();
+        }
+
+        private void CheckRemindSave()
+        {
+            if (!IsRemindSave)
+                return;
+            if (
+                MessageBoxVM.Show(
+                    new("你有未保存的数据, 需要保存吗?")
+                    {
+                        Icon = MessageBoxVM.Icon.Question,
+                        Button = MessageBoxVM.Button.YesNo
+                    }
+                )
+                is not MessageBoxVM.Result.Yes
+            )
+                return;
+            Save();
         }
 
         private void GetEnabledModsGroupData()
         {
-            foreach (var group in ModsInfo.AllEnabledModsId)
+            foreach (var modId in ModsInfo.AllEnabledModsId)
             {
-                var modInfo = ModsInfo.AllModsInfo[group];
+                var modInfo = ModsInfo.AllModsInfo[modId];
                 if (
                     GetGroupData(modInfo.Id, modInfo.Name, modInfo.ModDirectory)
                     is not GroupData groupData
@@ -134,9 +161,23 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         private void GetCollectedModsGroupData()
         {
-            foreach (var group in ModsInfo.AllCollectedModsId)
+            foreach (var modId in ModsInfo.AllCollectedModsId)
             {
-                var modInfo = ModsInfo.AllModsInfo[group];
+                var modInfo = ModsInfo.AllModsInfo[modId];
+                if (
+                    GetGroupData(modInfo.Id, modInfo.Name, modInfo.ModDirectory)
+                    is not GroupData groupData
+                )
+                    continue;
+                AllGroupDatas.Add(groupData);
+            }
+        }
+
+        private void GetUserGroupGroupData(string userGroup)
+        {
+            foreach (var modId in ModsInfo.AllUserGroups[userGroup])
+            {
+                var modInfo = ModsInfo.AllModsInfo[modId];
                 if (
                     GetGroupData(modInfo.Id, modInfo.Name, modInfo.ModDirectory)
                     is not GroupData groupData
@@ -154,6 +195,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             return groupData;
         }
 
+        #region PortraitFilter
         private void FactionList_SelectionChangedEvent(ListBoxItemVM item)
         {
             if (item is null || _nowSelectedFactionItem == item)
@@ -173,16 +215,11 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             NowShowFemalePortraitItems = groupData.FemaleFactionPortraitsItem[
                 _nowSelectedFactionItem.Id!
             ];
-            NowShowMalePortraitItems.CollectionChanged += (s, e) => MalePortraitFilter(MalePortraitFilterText);
-            NowShowFemalePortraitItems.CollectionChanged += (s, e) => FemalePortraitFilter(FemalePortraitFilterText);
-        }
-
-        [RelayCommand]
-        internal void Save()
-        {
-            foreach (var groupData in AllGroupDatas)
-                groupData.Save();
-            IsRemindSave = false;
+            NowShowMalePortraitItems.CollectionChanged += (s, e) =>
+                MalePortraitFilter(MalePortraitFilterText);
+            NowShowFemalePortraitItems.CollectionChanged += (s, e) =>
+                FemalePortraitFilter(FemalePortraitFilterText);
+            Logger.Info($"切换至 分组: {_nowGroupData.Header} 势力: {_nowSelectedFactionItem.Name}");
         }
 
         private void MalePortraitFilter(string filterText)
@@ -191,7 +228,9 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 return;
             if (string.IsNullOrWhiteSpace(filterText))
             {
-                NowShowMalePortraitItems = _nowGroupData.MaleFactionPortraitsItem[_nowSelectedFactionItem.Id!];
+                NowShowMalePortraitItems = _nowGroupData.MaleFactionPortraitsItem[
+                    _nowSelectedFactionItem.Id!
+                ];
             }
             else
             {
@@ -203,6 +242,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                                 .Contains(filterText, StringComparison.OrdinalIgnoreCase)
                     )
                 );
+                Logger.Info($"男性肖像列表搜索: {filterText}");
             }
         }
 
@@ -212,7 +252,9 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 return;
             if (string.IsNullOrWhiteSpace(filterText))
             {
-                NowShowFemalePortraitItems = _nowGroupData.FemaleFactionPortraitsItem[_nowSelectedFactionItem.Id!];
+                NowShowFemalePortraitItems = _nowGroupData.FemaleFactionPortraitsItem[
+                    _nowSelectedFactionItem.Id!
+                ];
             }
             else
             {
@@ -224,7 +266,17 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                                 .Contains(filterText, StringComparison.OrdinalIgnoreCase)
                     )
                 );
+                Logger.Info($"女性肖像列表搜索: {filterText}");
             }
+        }
+        #endregion
+        #endregion
+        [RelayCommand]
+        internal void Save()
+        {
+            foreach (var groupData in AllGroupDatas)
+                groupData.Save();
+            IsRemindSave = false;
         }
 
         [RelayCommand]

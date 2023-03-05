@@ -18,7 +18,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         /// </summary>
         public static PortraitsManagerViewModel Instance { get; private set; } = null!;
 
-        public const string strVanilla = "Vanilla";
+        public const string _StrVanilla = "Vanilla";
 
         public void Close()
         {
@@ -34,7 +34,6 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 return;
             }
             _nowGroupData.TryAddPortrait(array.OfType<string>(), _nowSelectedFactionItem.Id!, gender);
-            IsRemindSave = true;
         }
     }
 }

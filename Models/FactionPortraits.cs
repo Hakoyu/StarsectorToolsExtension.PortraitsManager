@@ -15,7 +15,6 @@ using StarsectorTools.Libs.Utils;
 
 namespace StarsectorToolsExtension.PortraitsManager.Models
 {
-
     /// <summary>
     /// 势力肖像
     /// </summary>
@@ -26,6 +25,15 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
         private const string strStandardFemale = "standard_female";
         private const string strPortraits = "portraits";
         private const string strDisplayName = "displayName";
+        private const string portraitBaseData =
+            "\t\"portraits\":{"
+            + "\t\t\"standard_male\":["
+            + "\t\t\t{0}"
+            + "\t\t],"
+            + "\t\t\"standard_female\":["
+            + "\t\t\t{1}"
+            + "\t\t]"
+            + "\t}";
 
         public bool IsChanged { get; private set; } = false;
         public string FactionId { get; private set; } = null!;
@@ -34,15 +42,16 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
         public string FileName { get; private set; } = null!;
         public string FileFullName { get; private set; } = null!;
 
-        private HashSet<string> _malePortraitsPath = new();
+        private readonly HashSet<string> _malePortraitsPath = new();
         public IReadOnlySet<string> MalePortraitsPath => _malePortraitsPath;
 
         private readonly HashSet<string> _femalePortraitsPath = new();
         public IReadOnlySet<string> FemalePortraitsPath => _femalePortraitsPath;
 
-        private HashSet<string> _allPortraitsPath = new();
+        private readonly HashSet<string> _allPortraitsPath = new();
         public IReadOnlySet<string> AllPortraitsPath => _allPortraitsPath;
 
+        #region Ctor
         private FactionPortrait(
             JsonObject jsonObject,
             JsonObject portraitsObject,
@@ -111,7 +120,7 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
             }
             return errSB.Length > 0 ? errSB.Insert(0, "\n女性肖像路径错误:") : null;
         }
-
+        #endregion
         public static FactionPortrait? Create(
             string file,
             string baseDirectory,
@@ -130,6 +139,36 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
             )
                 return null!;
             return new(jsonObject, portraitsObject, file, baseDirectory, out errMessage);
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Usage",
+            "CA2241:为格式化方法提供正确的参数",
+            Justification = "<挂起>"
+        )]
+        public static void CreateTo(string file)
+        {
+            SaveToNewFile(file, string.Format(portraitBaseData, string.Empty, string.Empty));
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Usage",
+            "CA2241:为格式化方法提供正确的参数",
+            Justification = "<挂起>"
+        )]
+        public static FactionPortrait CreateTo(
+            string file,
+            string baseDirectory,
+            out string errMessage
+        )
+        {
+            if (File.Exists(file))
+            {
+                if (Create(file, baseDirectory, out errMessage) is FactionPortrait factionPortrait)
+                    return factionPortrait;
+            }
+            SaveToNewFile(file, string.Format(portraitBaseData, string.Empty, string.Empty));
+            return Create(file, baseDirectory, out errMessage)!;
         }
 
         public bool Add(string path, Gender gender = Gender.All)
@@ -207,25 +246,34 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
                 _allPortraitsPath.Clear();
             }
         }
+
         public bool Save() => SaveTo(FileFullName, false);
 
         public bool SaveTo(string file) => SaveTo(file, true);
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Usage",
+            "CA2241:为格式化方法提供正确的参数",
+            Justification = "<挂起>"
+        )]
         private bool SaveTo(string file, bool createNew = false)
         {
             try
             {
-                string portraitsData =
-                    @$"	""portraits"":{{
-    	""standard_male"":[
-        	{string.Join(",\n\t\t\t", MalePortraitsPath.Select(s => @$"""{s.Replace("\\", "/")}"""))}
-    	],
-    	""standard_female"":[
-        	{string.Join(",\n\t\t\t", FemalePortraitsPath.Select(s => @$"""{s.Replace("\\", "/")}"""))}
-    	]
-	}}";
+                string portraitsData = string.Format(
+                    portraitBaseData,
+                    string.Join(
+                        ",\n\t\t\t",
+                        MalePortraitsPath.Select(s => @$"""{s.Replace("\\", "/")}""")
+                    ),
+                    string.Join(
+                        ",\n\t\t\t",
+                        FemalePortraitsPath.Select(s => @$"""{s.Replace("\\", "/")}""")
+                    )
+                );
                 if (createNew)
                 {
-                    File.WriteAllText(file, $"{{\n{portraitsData}\n}}");
+                    SaveToNewFile(file, portraitsData);
                 }
                 else
                 {
@@ -249,6 +297,11 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
                 Logger.Error($"保存势力肖像时出现错误\n势力: {FactionName} 文件路径: {file}", ex);
                 return false;
             }
+        }
+
+        private static void SaveToNewFile(string file, string portraitsData)
+        {
+            File.WriteAllText(file, $"{{\n{portraitsData}\n}}");
         }
 
         public static string? TryGetFactionPortraitData(string file) =>

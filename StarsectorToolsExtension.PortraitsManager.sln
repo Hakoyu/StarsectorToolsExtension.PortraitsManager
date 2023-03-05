@@ -3,7 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33424.131
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarsectorToolsExtension.PortraitsManager", "StarsectorToolsExtension.PortraitsManager.csproj", "{C5546A6C-7A8B-440D-ACF3-C3740E75D5B7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StarsectorToolsExtension.PortraitsManager", "StarsectorToolsExtension.PortraitsManager.csproj", "{C5546A6C-7A8B-440D-ACF3-C3740E75D5B7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{7D7EBF73-AF19-471E-BCDC-B015714EA4BD}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

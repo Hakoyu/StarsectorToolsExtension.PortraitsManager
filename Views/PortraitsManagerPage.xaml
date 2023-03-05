@@ -57,6 +57,19 @@
               IsExpanded="{Binding IsExpanded}"
               Style="{StaticResource ExpanderSelectedItem}"
               ToolTip="{Binding ToolTip}">
+              <Expander.ContextMenu>
+                <ContextMenu
+                  ItemContainerStyle="{StaticResource MenuItemView}"
+                  ItemsSource="{Binding ContextMenu.ItemsSource}"
+                  Style="{StaticResource ContextMenuBaseStyle}">
+                  <i:Interaction.Triggers>
+                    <!--  使用Loaded时,如果有多个未载入的菜单,使用右键挨个点击只会载入第一个,故使用Opened  -->
+                    <i:EventTrigger EventName="Opened">
+                      <i:InvokeCommandAction Command="{Binding ContextMenu.LoadedCommand}" />
+                    </i:EventTrigger>
+                  </i:Interaction.Triggers>
+                </ContextMenu>
+              </Expander.ContextMenu>
               <ListBox
                 ItemContainerStyle="{StaticResource ListBoxItemView}"
                 ItemsSource="{Binding FactionList.ItemsSource}"
@@ -107,31 +120,30 @@
           <ColumnDefinition MinWidth="128" />
           <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <ComboBox
-          x:Name="ComboBox_GroupList"
-          Width="{Binding ActualWidth, ElementName=ScrollViewer_ModsList}"
-          Margin="0,0,5,0"
-          HorizontalAlignment="Left"
-          VerticalAlignment="Top"
-          DisplayMemberPath="Content"
-          ItemContainerStyle="{StaticResource ComboBoxItemBaseStyle}"
-          ItemsSource="{Binding ComboBox_GroupList.ItemsSource}"
-          SelectedItem="{Binding ComboBox_GroupList.SelectedItem}"
-          Style="{StaticResource ComboBoxBaseStyle}">
-          <i:Interaction.Triggers>
-            <i:EventTrigger EventName="SelectionChanged">
-              <i:InvokeCommandAction Command="{Binding ComboBox_GroupList.SelectionChangedCommand}" CommandParameter="{Binding ComboBox_GroupList.SelectedItem}" />
-            </i:EventTrigger>
-          </i:Interaction.Triggers>
-        </ComboBox>
-        <ScrollViewer
-          x:Name="ScrollViewer_ModsList"
-          Margin="0,35,5,0"
-          ScrollViewer.VerticalScrollBarVisibility="Auto">
-          <StackPanel x:Name="StackPanel_GroupList" MinWidth="100">
-            <ItemsControl ItemTemplate="{StaticResource ModFactionList}" ItemsSource="{Binding AllGroupDatas, IsAsync=True}" />
-          </StackPanel>
-        </ScrollViewer>
+        <Grid Margin="0,0,5,0">
+          <ComboBox
+            x:Name="ComboBox_GroupList"
+            VerticalAlignment="Top"
+            DisplayMemberPath="Content"
+            ItemContainerStyle="{StaticResource ComboBoxItemBaseStyle}"
+            ItemsSource="{Binding ComboBox_GroupList.ItemsSource}"
+            SelectedItem="{Binding ComboBox_GroupList.SelectedItem}"
+            Style="{StaticResource ComboBoxBaseStyle}">
+            <i:Interaction.Triggers>
+              <i:EventTrigger EventName="SelectionChanged">
+                <i:InvokeCommandAction Command="{Binding ComboBox_GroupList.SelectionChangedCommand}" CommandParameter="{Binding ComboBox_GroupList.SelectedItem}" />
+              </i:EventTrigger>
+            </i:Interaction.Triggers>
+          </ComboBox>
+          <ScrollViewer
+            x:Name="ScrollViewer_ModsList"
+            Margin="0,35,0,0"
+            ScrollViewer.VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="StackPanel_GroupList" MinWidth="100">
+              <ItemsControl ItemTemplate="{StaticResource ModFactionList}" ItemsSource="{Binding AllGroupDatas, IsAsync=True}" />
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
         <GroupBox
           x:Name="GroupBox_MalePortraits"
           Grid.Column="1"
