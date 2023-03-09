@@ -34,6 +34,7 @@ namespace StarsectorToolsExtension.PortraitsManager.Views
         {
             InitializeComponent();
             DataContext = new PortraitsManagerViewModel(true);
+            ViewModel.AddFactionWindowViewModel = new(new AddFactionWindow());
         }
 
         private void ListBox_PreviewMouseWheel(object sender, MouseWheelEventArgs e)

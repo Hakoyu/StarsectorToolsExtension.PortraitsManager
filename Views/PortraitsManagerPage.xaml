@@ -260,7 +260,7 @@
               Margin="0,30,0,0"
               AllowDrop="True"
               Background="{DynamicResource ColorBG}"
-              Drop="ListBox_MalePortraitsList_Drop"
+              Drop="ListBox_FemalePortraitsList_Drop"
               ItemContainerStyle="{StaticResource PortraitItem}"
               ItemTemplate="{StaticResource PortraitImageItem}"
               ItemsSource="{Binding NowShowFemalePortraitItems, IsAsync=True}"

@@ -47,7 +47,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         partial void OnHeaderChanged(string vaule)
         {
-            _header = $"{vaule} ({_allImageStream.Count})";
+            _header = $"{vaule} ({_allFactionPortraits.Count},{_allImageStream.Count})";
         }
 
         [ObservableProperty]
@@ -72,10 +72,11 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             ObservableCollection<ListBoxItemVM>
         > _femaleFactionPortraitsItem = new();
 
-        private Dictionary<string, FactionPortrait> _allFactionPortraits = new();
-        private Dictionary<string, Stream> _allImageStream = new();
+        private readonly Dictionary<string, FactionPortrait> _allFactionPortraits = new();
+        private readonly Dictionary<string, Stream> _allImageStream = new();
 
-        private HashSet<string> _planToDeletePortraitPaths = new();
+        private readonly HashSet<string> _planToDeleteFaction = new();
+        private readonly HashSet<string> _planToDeletePortraitPaths = new();
 
         private GroupData(string groupId, string groupName, string baseDirectory)
         {
@@ -113,12 +114,77 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                     //    MessageBoxVM.Show(new("无法在原版添加新势力"));
                     //    return;
                     //}
-                    //FactionPortrait.CreateTo();
-                    //TryGetFactionPortrait
+                    var viewModel = PortraitsManagerViewModel.Instance.AddFactionWindowViewModel;
+                    viewModel.BaseGroupData = this;
+                    viewModel.ShowDialog();
                 };
                 return menuItem;
             }
         }
+        public bool TryAddFaction(string faction)
+        {
+            if (_allFactionPortraits.ContainsKey(faction))
+            {
+                MessageBoxVM.Show(new("势力已存在") { ShowMainWindowBlurEffect = false });
+                return false;
+            }
+            AddFaction(faction);
+            return true;
+        }
+
+        private void AddFaction(string faction)
+        {
+            var file = FactionPortrait.CombineFactionPath(FactionDirectory, faction);
+            FactionPortrait.CreateTo(file);
+            _planToDeleteFaction.Remove(file);
+            TryGetFaction(BaseDirectory, file);
+            RefreshDispalyData();
+        }
+
+        public bool TryRenameFaction(string faction, string newFaction)
+        {
+            if (_allFactionPortraits.ContainsKey(newFaction))
+            {
+                MessageBoxVM.Show(new("势力已存在") { ShowMainWindowBlurEffect = false });
+                return false;
+            }
+            RenameFaction(faction, newFaction);
+            return true;
+        }
+
+        private void RenameFaction(string faction, string newFaction)
+        {
+            // 替换数据
+            var file = FactionPortrait.CombineFactionPath(FactionDirectory, faction);
+            var newFile = FactionPortrait.CombineFactionPath(FactionDirectory, newFaction);
+            Utils.DeleteFileToRecycleBin(file);
+            File.WriteAllText(newFile, File.ReadAllText(file));
+            RemoveFaction(faction);
+            AddFaction(faction);
+            RefreshDispalyData();
+        }
+        public bool TryRemoveFaction(string faction)
+        {
+            if (!_allFactionPortraits.ContainsKey(faction))
+            {
+                MessageBoxVM.Show(new("势力不存在") { ShowMainWindowBlurEffect = false });
+                return false;
+            }
+            RemoveFaction(faction);
+            return true;
+        }
+
+        private void RemoveFaction(string faction)
+        {
+            var file = FactionPortrait.CombineFactionPath(FactionDirectory, faction);
+            _planToDeleteFaction.Add(file);
+            FactionList.Remove(FactionList.First(i => i.Id == faction));
+            _allFactionPortraits.Remove(faction);
+            MaleFactionPortraitsItem.Remove(faction);
+            FemaleFactionPortraitsItem.Remove(faction);
+            RefreshDispalyData();
+        }
+
         private void RefreshDispalyData(bool isRemindSave = true)
         {
             RefreshHeader();
@@ -155,16 +221,16 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         {
             if (Utils.GetAllSubFiles(factionDirectory) is not List<FileInfo> fileList)
                 return;
-            TryGetFactionPortraits(baseDirectory, fileList);
+            TryAllGetFactionPortraits(baseDirectory, fileList);
         }
 
-        private void TryGetFactionPortraits(string baseDirectory, IList<FileInfo> fileList)
+        private void TryAllGetFactionPortraits(string baseDirectory, IList<FileInfo> fileList)
         {
             foreach (var file in fileList)
             {
                 try
                 {
-                    TryGetFactionPortrait(baseDirectory, file.FullName);
+                    TryGetFaction(baseDirectory, file.FullName);
                 }
                 catch (Exception ex)
                 {
@@ -174,10 +240,10 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             }
         }
 
-        private void TryGetFactionPortrait(string baseDirectory, string file)
+        private void TryGetFaction(string baseDirectory, string file)
         {
             if (
-                FactionPortrait.Create(file, baseDirectory, out var errMessage)
+                FactionPortrait.Create(file, baseDirectory, out _)
                 is not FactionPortrait factionPortrait
             )
                 return;
@@ -186,38 +252,47 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             var maleCollection = new ObservableCollection<ListBoxItemVM>();
             var femaleCollection = new ObservableCollection<ListBoxItemVM>();
             foreach (var portraitPath in factionPortrait.AllPortraitsPath)
-            {
-                var portraits = Path.GetFileNameWithoutExtension(portraitPath);
-                _allImageStream.TryAdd(
-                    portraitPath,
-                    new StreamReader(
-                        Path.Combine(factionPortrait.BaseDirectory, portraitPath)
-                    ).BaseStream
-                );
-                if (factionPortrait.MalePortraitsPath.Contains(portraitPath))
-                    maleCollection.Add(
-                        CreatePortraitItem(
-                            Gender.Male,
-                            faction,
-                            portraits,
-                            portraitPath,
-                            _allImageStream[portraitPath]
-                        )
-                    );
-                if (factionPortrait.FemalePortraitsPath.Contains(portraitPath))
-                    femaleCollection.Add(
-                        CreatePortraitItem(
-                            Gender.Female,
-                            faction,
-                            portraits,
-                            portraitPath,
-                            _allImageStream[portraitPath]
-                        )
-                    );
-            }
+                GetFactionPortrait(faction, portraitPath, factionPortrait, maleCollection, femaleCollection);
             _allFactionPortraits.Add(faction, factionPortrait);
             MaleFactionPortraitsItem.Add(faction, maleCollection);
             FemaleFactionPortraitsItem.Add(faction, femaleCollection);
+        }
+
+        private void GetFactionPortrait(
+            string faction,
+            string portraitPath,
+            FactionPortrait factionPortrait,
+            ObservableCollection<ListBoxItemVM> maleCollection,
+            ObservableCollection<ListBoxItemVM> femaleCollection
+        )
+        {
+            var portraits = Path.GetFileNameWithoutExtension(portraitPath);
+            _allImageStream.TryAdd(
+                portraitPath,
+                new StreamReader(
+                    Path.Combine(factionPortrait.BaseDirectory, portraitPath)
+                ).BaseStream
+            );
+            if (factionPortrait.MalePortraitsPath.Contains(portraitPath))
+                maleCollection.Add(
+                    CreatePortraitItem(
+                        Gender.Male,
+                        faction,
+                        portraits,
+                        portraitPath,
+                        _allImageStream[portraitPath]
+                    )
+                );
+            if (factionPortrait.FemalePortraitsPath.Contains(portraitPath))
+                femaleCollection.Add(
+                    CreatePortraitItem(
+                        Gender.Female,
+                        faction,
+                        portraits,
+                        portraitPath,
+                        _allImageStream[portraitPath]
+                    )
+                );
         }
         #endregion
         #region CreateFactionItem
@@ -583,9 +658,6 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 MessageBoxVM.Show(new($"以下文件添加失败 必须是128*128的PNG文件\n{errSB}"));
         }
 
-        private List<FileInfo> AddPortraitDirectory(string directory) =>
-            Utils.GetAllSubFiles(directory);
-
         private bool AddPortraitFile(string commonPath, string file, string faction, Gender gender)
         {
             if (!CheckFileIsImage(file))
@@ -597,10 +669,18 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             var pmPortraitsDirectory = Path.GetDirectoryName(pmPortraitsFullName);
             if (!Directory.Exists(pmPortraitsDirectory))
                 Directory.CreateDirectory(pmPortraitsDirectory!);
-            File.Copy(file, pmPortraitsFullName, true);
+            Stream stream;
+            if (_allImageStream.ContainsKey(pmPortraitsPath))
+            {
+                stream = _allImageStream[pmPortraitsPath];
+            }
+            else
+            {
+                File.Copy(file, pmPortraitsFullName, true);
+                stream = new StreamReader(pmPortraitsFullName).BaseStream;
+                _allImageStream.Add(pmPortraitsPath, stream);
+            }
             var factionPortrait = _allFactionPortraits[faction];
-            var stream = new StreamReader(pmPortraitsFullName).BaseStream;
-            _allImageStream.Add(pmPortraitsPath, stream);
             factionPortrait.Add(pmPortraitsPath, gender);
             var portraitItem = CreatePortraitItem(
                 gender,

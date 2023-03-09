@@ -27,6 +27,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         {
             foreach (var groupData in AllGroupDatas)
                 groupData.Close();
+            AddFactionWindowViewModel?.Close();
         }
 
         public void DropPortraitFiles(Array array, Gender gender)

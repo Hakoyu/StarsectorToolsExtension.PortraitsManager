@@ -20,20 +20,20 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
     /// </summary>
     public class FactionPortrait : IEnumerable, IEnumerable<string>
     {
-        private const string strFactionExtension = ".faction";
-        private const string strStandardMale = "standard_male";
-        private const string strStandardFemale = "standard_female";
-        private const string strPortraits = "portraits";
-        private const string strDisplayName = "displayName";
-        private const string portraitBaseData =
-            "\t\"portraits\":{"
-            + "\t\t\"standard_male\":["
-            + "\t\t\t{0}"
-            + "\t\t],"
-            + "\t\t\"standard_female\":["
-            + "\t\t\t{1}"
-            + "\t\t]"
-            + "\t}";
+        private const string _FactionExtension = ".faction";
+        private const string _StandardMale = "standard_male";
+        private const string _StandardFemale = "standard_female";
+        private const string _Portraits = "portraits";
+        private const string _DisplayName = "displayName";
+        private const string _PortraitBaseData =
+            "\t\"portraits\":{{\n"
+            + "\t\t\"standard_male\":[\n"
+            + "\t\t\t{0}\n"
+            + "\t\t],\n"
+            + "\t\t\"standard_female\":[\n"
+            + "\t\t\t{1}\n"
+            + "\t\t]\n"
+            + "\t}}";
 
         public bool IsChanged { get; private set; } = false;
         public string FactionId { get; private set; } = null!;
@@ -52,6 +52,8 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
         public IReadOnlySet<string> AllPortraitsPath => _allPortraitsPath;
 
         #region Ctor
+        public FactionPortrait() { }
+
         private FactionPortrait(
             JsonObject jsonObject,
             JsonObject portraitsObject,
@@ -68,7 +70,7 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
             StringBuilder? errMale = GetMalePortraits(portraitsObject);
             StringBuilder? errFemale = GetFemalePortraits(portraitsObject);
             if (
-                jsonObject.TryGetPropertyValue(strDisplayName, out var displayName)
+                jsonObject.TryGetPropertyValue(_DisplayName, out var displayName)
                 && displayName is not null
             )
                 FactionName = displayName.GetValue<string>();
@@ -80,7 +82,7 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
         {
             StringBuilder? errSB = new();
             if (
-                !portraitsObject.TryGetPropertyValue(strStandardMale, out var maleNode)
+                !portraitsObject.TryGetPropertyValue(_StandardMale, out var maleNode)
                 || maleNode?.AsArray() is not JsonArray maleArray
             )
                 return errSB.AppendLine("\n男性肖像不存在");
@@ -103,7 +105,7 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
         {
             StringBuilder? errSB = new();
             if (
-                !portraitsObject.TryGetPropertyValue(strStandardFemale, out var femaleNode)
+                !portraitsObject.TryGetPropertyValue(_StandardFemale, out var femaleNode)
                 || femaleNode?.AsArray() is not JsonArray femaleArray
             )
                 return errSB.AppendLine("\n女性肖像不存在");
@@ -129,33 +131,23 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
         {
             errMessage = string.Empty;
             if (
-                Path.GetExtension(file) is not strFactionExtension
+                Path.GetExtension(file) is not _FactionExtension
                 || Utils.JsonParse2Object(file) is not JsonObject jsonObject
             )
                 return null;
             if (
-                !jsonObject.TryGetPropertyValue(strPortraits, out var portraitsNode)
+                !jsonObject.TryGetPropertyValue(_Portraits, out var portraitsNode)
                 || portraitsNode?.AsObject() is not JsonObject portraitsObject
             )
                 return null!;
             return new(jsonObject, portraitsObject, file, baseDirectory, out errMessage);
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
-            "Usage",
-            "CA2241:为格式化方法提供正确的参数",
-            Justification = "<挂起>"
-        )]
         public static void CreateTo(string file)
         {
-            SaveToNewFile(file, string.Format(portraitBaseData, string.Empty, string.Empty));
+            SaveToNewFile(file, string.Format(_PortraitBaseData, string.Empty, string.Empty));
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
-            "Usage",
-            "CA2241:为格式化方法提供正确的参数",
-            Justification = "<挂起>"
-        )]
         public static FactionPortrait CreateTo(
             string file,
             string baseDirectory,
@@ -167,7 +159,7 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
                 if (Create(file, baseDirectory, out errMessage) is FactionPortrait factionPortrait)
                     return factionPortrait;
             }
-            SaveToNewFile(file, string.Format(portraitBaseData, string.Empty, string.Empty));
+            SaveToNewFile(file, string.Format(_PortraitBaseData, string.Empty, string.Empty));
             return Create(file, baseDirectory, out errMessage)!;
         }
 
@@ -251,17 +243,12 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
 
         public bool SaveTo(string file) => SaveTo(file, true);
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
-            "Usage",
-            "CA2241:为格式化方法提供正确的参数",
-            Justification = "<挂起>"
-        )]
         private bool SaveTo(string file, bool createNew = false)
         {
             try
             {
                 string portraitsData = string.Format(
-                    portraitBaseData,
+                    _PortraitBaseData,
                     string.Join(
                         ",\n\t\t\t",
                         MalePortraitsPath.Select(s => @$"""{s.Replace("\\", "/")}""")
@@ -274,23 +261,9 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
                 if (createNew)
                 {
                     SaveToNewFile(file, portraitsData);
+                    return true;
                 }
-                else
-                {
-                    string jsonData = File.ReadAllText(file);
-                    if (
-                        Path.GetExtension(file) is not strFactionExtension
-                        || !Regex.IsMatch(jsonData, @"""portraits"":")
-                    )
-                        return false;
-                    jsonData = Regex.Replace(
-                        jsonData,
-                        @"[ \t]*""portraits"":[^}]*}",
-                        portraitsData
-                    );
-                    File.WriteAllText(file, jsonData);
-                }
-                return true;
+                return SaveToOriginalFile(file, portraitsData);
             }
             catch (Exception ex)
             {
@@ -299,13 +272,31 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
             }
         }
 
+        private static bool SaveToOriginalFile(string file, string portraitsData)
+        {
+            string jsonData = File.ReadAllText(file);
+            if (
+                Path.GetExtension(file) is not _FactionExtension
+                || !Regex.IsMatch(jsonData, @"""portraits"":")
+            )
+                return false;
+            jsonData = Regex.Replace(jsonData, @"[ \t]*""portraits"":[^}]*}", portraitsData);
+            File.WriteAllText(file, jsonData);
+            return true;
+        }
+
         private static void SaveToNewFile(string file, string portraitsData)
         {
+            if (string.IsNullOrWhiteSpace(Path.GetExtension(file)))
+                file += _FactionExtension;
             File.WriteAllText(file, $"{{\n{portraitsData}\n}}");
         }
 
         public static string? TryGetFactionPortraitData(string file) =>
             Regex.Match(File.ReadAllText(file), @"[ \t]*""portraits"":[^}]*}").Value;
+
+        public static string CombineFactionPath(string baseDirectory, string faction) =>
+            Path.Combine(baseDirectory, faction) + ".faction";
 
         public IEnumerator<string> GetEnumerator() => AllPortraitsPath.GetEnumerator();
 

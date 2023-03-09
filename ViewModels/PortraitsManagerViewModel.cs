@@ -19,6 +19,29 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
     internal partial class PortraitsManagerViewModel : ObservableObject
     {
         [ObservableProperty]
+        private AddFactionWindowViewModel _addFactionWindowViewModel;
+
+        partial void OnAddFactionWindowViewModelChanged(AddFactionWindowViewModel value)
+        {
+            InitializeAddFactionWindowViewModel(value);
+        }
+
+        private void InitializeAddFactionWindowViewModel(AddFactionWindowViewModel viewModel)
+        {
+            viewModel.OKEvent += () =>
+            {
+                if (viewModel.IsRename && viewModel.BaseGroupData.TryRenameFaction(viewModel.OriginalFactionName, viewModel.FactionName))
+                    viewModel.Hide();
+                else if (viewModel.BaseGroupData.TryAddFaction(viewModel.FactionName))
+                    viewModel.Hide();
+            };
+            viewModel.CancelEvent += () =>
+            {
+                viewModel.Hide();
+            };
+        }
+
+        [ObservableProperty]
         private string _maleGroupBoxHeader = "男性肖像";
 
         [ObservableProperty]
