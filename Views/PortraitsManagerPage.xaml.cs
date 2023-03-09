@@ -30,10 +30,6 @@ namespace StarsectorToolsExtension.PortraitsManager.Views
 
         public bool NeedSave => ViewModel.IsRemindSave;
 
-        private ScrollViewer _malePortraitListBoxScrollViewer;
-
-        private ScrollViewer _femalePortraitListBoxScrollViewer;
-
         public PortraitsManagerPage()
         {
             InitializeComponent();
@@ -86,20 +82,6 @@ namespace StarsectorToolsExtension.PortraitsManager.Views
         public void Close()
         {
             ViewModel.Close();
-        }
-
-        private void ListBox_MalePortraitsList_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            _malePortraitListBoxScrollViewer ??= WPFUtils.FindVisualChild<ScrollViewer>((ListBox)sender)!;
-            _malePortraitListBoxScrollViewer.ScrollToVerticalOffset(_malePortraitListBoxScrollViewer.VerticalOffset - e.Delta);
-            e.Handled = true;
-        }
-
-        private void ListBox_FemalePortraitsList_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            _femalePortraitListBoxScrollViewer ??= WPFUtils.FindVisualChild<ScrollViewer>((ListBox)sender)!;
-            _femalePortraitListBoxScrollViewer.ScrollToVerticalOffset(_femalePortraitListBoxScrollViewer.VerticalOffset - e.Delta);
-            e.Handled = true;
         }
     }
 }

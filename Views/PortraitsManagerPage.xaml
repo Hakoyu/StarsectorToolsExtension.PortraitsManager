@@ -193,7 +193,6 @@
               ItemContainerStyle="{StaticResource PortraitItem}"
               ItemTemplate="{StaticResource PortraitImageItem}"
               ItemsSource="{Binding NowShowMalePortraitItems, IsAsync=True}"
-              PreviewMouseWheel="ListBox_MalePortraitsList_PreviewMouseWheel"
               SelectionMode="Extended"
               Style="{StaticResource ListBoxBaseStyle}">
               <ListBox.ItemsPanel>
@@ -266,7 +265,7 @@
               ItemTemplate="{StaticResource PortraitImageItem}"
               ItemsSource="{Binding NowShowFemalePortraitItems, IsAsync=True}"
               SelectionMode="Extended"
-              Style="{StaticResource ListBoxBaseStyle}" PreviewMouseWheel="ListBox_FemalePortraitsList_PreviewMouseWheel">
+              Style="{StaticResource ListBoxBaseStyle}">
               <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
                   <WrapPanel />
