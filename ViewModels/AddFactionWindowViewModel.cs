@@ -33,8 +33,6 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         [ObservableProperty]
         private ComboBoxVM _comboBox_VanillaFaction = new();
 
-        public bool IsRename { get; set; } = false;
-
         public string OriginalFactionName { get; set; } = string.Empty;
 
         public GroupData BaseGroupData { get; set; } = null!;

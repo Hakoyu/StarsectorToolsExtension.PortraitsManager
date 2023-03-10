@@ -37,7 +37,7 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
 
         public bool IsChanged { get; private set; } = false;
         public string FactionId { get; private set; } = null!;
-        public string? FactionName { get; private set; } = null;
+        public string FactionName { get; private set; } = null;
         public string BaseDirectory { get; private set; } = null!;
         public string FileName { get; private set; } = null!;
         public string FileFullName { get; private set; } = null!;
@@ -297,6 +297,16 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
 
         public static string CombineFactionPath(string baseDirectory, string faction) =>
             Path.Combine(baseDirectory, faction) + ".faction";
+
+        public void Rename(string newFactionName)
+        {
+            var factionName = FactionName;
+            FactionName = newFactionName;
+            var newFileName = FileName.Replace(factionName, newFactionName);
+            FileFullName = FileFullName.Replace(FileName, newFileName);
+            FileName = newFileName;
+            IsChanged = true;
+        }
 
         public IEnumerator<string> GetEnumerator() => AllPortraitsPath.GetEnumerator();
 

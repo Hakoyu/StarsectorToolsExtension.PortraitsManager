@@ -30,7 +30,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         {
             viewModel.OKEvent += () =>
             {
-                if (viewModel.IsRename && viewModel.BaseGroupData.TryRenameFaction(viewModel.OriginalFactionName, viewModel.FactionName))
+                if (!string.IsNullOrEmpty(viewModel.OriginalFactionName) && viewModel.BaseGroupData.TryRenameFaction(viewModel.OriginalFactionName, viewModel.FactionName))
                     viewModel.Hide();
                 else if (viewModel.BaseGroupData.TryAddFaction(viewModel.FactionName))
                     viewModel.Hide();
@@ -79,7 +79,12 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         partial void OnNowShowMalePortraitItemsChanged(ObservableCollection<ListBoxItemVM> value)
         {
-            MaleGroupBoxHeader = $"男性肖像 ({NowShowMalePortraitItems.Count})";
+            RefreshMaleGroupBoxHeader();
+        }
+
+        private void RefreshMaleGroupBoxHeader()
+        {
+            MaleGroupBoxHeader = $"男性肖像 ({NowShowMalePortraitItems?.Count})";
         }
 
         [ObservableProperty]
@@ -87,7 +92,12 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         partial void OnNowShowFemalePortraitItemsChanged(ObservableCollection<ListBoxItemVM> value)
         {
-            FemaleGroupBoxHeader = $"女性肖像 ({NowShowFemalePortraitItems.Count})";
+            RefreshFemaleGroupBoxHeader();
+        }
+
+        private void RefreshFemaleGroupBoxHeader()
+        {
+            FemaleGroupBoxHeader = $"女性肖像 ({NowShowMalePortraitItems?.Count})";
         }
 
         private ListBoxItemVM _nowSelectedFactionItem;
@@ -103,6 +113,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             ComboBox_GroupList.SelectionChangedEvent += ComboBox_GroupList_SelectionChangedEvent;
             ComboBox_GroupList.SelectedIndex = 0;
             InitializeGroup();
+            // TODO: 势力筛选
         }
 
         [RelayCommand]

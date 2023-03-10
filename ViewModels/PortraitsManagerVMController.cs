@@ -42,11 +42,17 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 _nowSelectedFactionItem.Id!,
                 gender
             );
+            OnNowShowMalePortraitItemsChanged(null!);
+            OnNowShowFemalePortraitItemsChanged(null!);
         }
 
         private void ComboBox_GroupList_SelectionChangedEvent(ComboBoxItemVM item)
         {
             ChangeAllGroupData(item.Tag!.ToString()!);
+            NowShowMalePortraitItems?.Clear();
+            NowShowFemalePortraitItems?.Clear();
+            RefreshMaleGroupBoxHeader();
+            RefreshFemaleGroupBoxHeader();
         }
 
         private void InitializeGroup()
