@@ -30,7 +30,13 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         {
             viewModel.OKEvent += () =>
             {
-                if (!string.IsNullOrEmpty(viewModel.OriginalFactionName) && viewModel.BaseGroupData.TryRenameFaction(viewModel.OriginalFactionName, viewModel.FactionName))
+                if (
+                    !string.IsNullOrEmpty(viewModel.OriginalFactionName)
+                    && viewModel.BaseGroupData.TryRenameFaction(
+                        viewModel.OriginalFactionName,
+                        viewModel.FactionName
+                    )
+                )
                     viewModel.Hide();
                 else if (viewModel.BaseGroupData.TryAddFaction(viewModel.FactionName))
                     viewModel.Hide();
@@ -100,6 +106,26 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             FemaleGroupBoxHeader = $"女性肖像 ({NowShowMalePortraitItems?.Count})";
         }
 
+        [ObservableProperty]
+        private string _factionFilterText = string.Empty;
+
+        private readonly Dictionary<
+            string,
+            ObservableCollection<ListBoxItemVM>
+        > _originalFactionItemsSource = new();
+
+        partial void OnFactionFilterTextChanged(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                CleanFactionFilter();
+            }
+            else
+            {
+                FactionFilter(value);
+            }
+        }
+
         private ListBoxItemVM _nowSelectedFactionItem;
 
         internal List<ListBoxItemVM> NowSelectedMalePortraitItems { get; private set; }
@@ -113,7 +139,6 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             ComboBox_GroupList.SelectionChangedEvent += ComboBox_GroupList_SelectionChangedEvent;
             ComboBox_GroupList.SelectedIndex = 0;
             InitializeGroup();
-            // TODO: 势力筛选
         }
 
         [RelayCommand]

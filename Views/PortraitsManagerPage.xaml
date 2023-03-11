@@ -54,6 +54,7 @@
             <Expander
               Padding="0"
               Header="{Binding Header}"
+              IsEnabled="{Binding IsEnabled}"
               IsExpanded="{Binding IsExpanded}"
               Style="{StaticResource ExpanderSelectedItem}"
               ToolTip="{Binding ToolTip}">
@@ -114,11 +115,11 @@
     <GroupBox Header="PortraitsManager" Style="{StaticResource GroupBoxBaseStyle}">
       <Grid Grid.Row="2" Grid.RowSpan="2">
         <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" MaxWidth="200" />
           <ColumnDefinition MinWidth="128" />
           <ColumnDefinition Width="5" />
           <ColumnDefinition MinWidth="128" />
-          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" MaxWidth="200" />
         </Grid.ColumnDefinitions>
         <Grid Margin="0,0,5,0">
           <ComboBox
@@ -135,9 +136,44 @@
               </i:EventTrigger>
             </i:Interaction.Triggers>
           </ComboBox>
+          <TextBox
+            x:Name="TextBox_FactionFilter"
+            Margin="0,35,0,0"
+            VerticalAlignment="Top"
+            Style="{StaticResource TextBoxBaseStyle}"
+            Text="{Binding FactionFilterText, UpdateSourceTrigger=PropertyChanged}" />
+          <!--  TextBox输入占位符  -->
+          <Label
+            Width="{Binding Width, ElementName=TextBox_FactionFilter}"
+            Height="{Binding Height, ElementName=TextBox_FactionFilter}"
+            Margin="{Binding Margin, ElementName=TextBox_FactionFilter}"
+            HorizontalAlignment="{Binding HorizontalAlignment, ElementName=TextBox_FactionFilter}"
+            VerticalAlignment="{Binding VerticalAlignment, ElementName=TextBox_FactionFilter}"
+            Background="{x:Null}"
+            Content="搜索势力"
+            FontSize="16"
+            IsEnabled="False"
+            IsHitTestVisible="False">
+            <Label.Style>
+              <Style BasedOn="{StaticResource LabelBaseStyle}" TargetType="Label">
+                <Setter Property="Visibility" Value="Hidden" />
+                <Style.Triggers>
+                  <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                      <Condition Binding="{Binding Text, ElementName=TextBox_FactionFilter}" Value="" />
+                      <Condition Binding="{Binding IsFocused, ElementName=TextBox_FactionFilter}" Value="False" />
+                    </MultiDataTrigger.Conditions>
+                    <MultiDataTrigger.Setters>
+                      <Setter Property="Visibility" Value="Visible" />
+                    </MultiDataTrigger.Setters>
+                  </MultiDataTrigger>
+                </Style.Triggers>
+              </Style>
+            </Label.Style>
+          </Label>
           <ScrollViewer
             x:Name="ScrollViewer_ModsList"
-            Margin="0,35,0,0"
+            Margin="0,65,0,0"
             ScrollViewer.VerticalScrollBarVisibility="Auto">
             <StackPanel x:Name="StackPanel_GroupList" MinWidth="100">
               <ItemsControl ItemTemplate="{StaticResource ModFactionList}" ItemsSource="{Binding AllGroupDatas, IsAsync=True}" />

@@ -45,6 +45,9 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         [ObservableProperty]
         private string _header = string.Empty;
 
+        [ObservableProperty]
+        private bool _isEnabled = true;
+
         partial void OnHeaderChanged(string vaule)
         {
             _header = $"{vaule} ({_allFactionPortraits.Count},{_allImageStream.Count})";
@@ -902,7 +905,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 kv.Value.Close();
         }
         #endregion
-        private string GetVanillaFactionI18n(string factionId) =>
+        private static string GetVanillaFactionI18n(string factionId) =>
             VanillaFactions.AllVanillaFactionsI18n.TryGetValue(factionId, out var name)
                 ? name
                 : factionId;

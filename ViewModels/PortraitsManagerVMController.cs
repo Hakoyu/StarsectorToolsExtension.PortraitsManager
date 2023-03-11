@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -49,8 +50,13 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         private void ComboBox_GroupList_SelectionChangedEvent(ComboBoxItemVM item)
         {
             ChangeAllGroupData(item.Tag!.ToString()!);
-            NowShowMalePortraitItems?.Clear();
-            NowShowFemalePortraitItems?.Clear();
+            CleanShowPortraitItems();
+        }
+
+        private void CleanShowPortraitItems()
+        {
+            NowShowMalePortraitItems = null!;
+            NowShowFemalePortraitItems = null!;
             RefreshMaleGroupBoxHeader();
             RefreshFemaleGroupBoxHeader();
         }
@@ -68,9 +74,63 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             }
         }
 
+        private void CleanFactionFilter()
+        {
+            foreach (var groupData in AllGroupDatas)
+            {
+                if (_originalFactionItemsSource.TryGetValue(groupData.GroupId, out var itemsSource))
+                    groupData.FactionList.ItemsSource = itemsSource;
+                groupData.IsEnabled = true;
+            }
+            _originalFactionItemsSource.Clear();
+        }
+
+        private void FactionFilter(string text)
+        {
+            foreach (var groupData in AllGroupDatas)
+            {
+                ObservableCollection<ListBoxItemVM> tempFactionList = new();
+                // 使用已保存的原始分组
+                if (
+                    !_originalFactionItemsSource.TryGetValue(groupData.GroupId, out var itemsSource)
+                )
+                    itemsSource = groupData.FactionList.ItemsSource;
+                foreach (var item in itemsSource)
+                {
+                    // 搜索I18n名称和ID
+                    if (
+                        item.Id!.Contains(text, StringComparison.OrdinalIgnoreCase)
+                        || item.Name!.Contains(text, StringComparison.OrdinalIgnoreCase)
+                    )
+                    {
+                        tempFactionList.Add(item);
+                    }
+                }
+                if (tempFactionList.Any())
+                {
+                    // 如果过滤列表中含有项目,则保存原始列表并替换显示列表
+                    _originalFactionItemsSource.TryAdd(
+                        groupData.GroupId,
+                        groupData.FactionList.ItemsSource
+                    );
+                    groupData.FactionList.ItemsSource = tempFactionList;
+                    // 如果已选中的势力未包含在过滤后的列表中,清除选中项
+                    if (!tempFactionList.Contains(_nowSelectedFactionItem))
+                        CleanShowPortraitItems();
+                }
+                else
+                {
+                    // 如果过滤列表没有项目,则禁用分组点击并取消展开
+                    groupData.IsEnabled = false;
+                    groupData.IsExpanded = false;
+                }
+            }
+        }
+
         #region ChangeAllGroupData
         private void ChangeAllGroupData(string groupTypeName)
         {
+            FactionFilterText = string.Empty;
             CheckRemindSave();
             Close();
             AllGroupDatas.Clear();
