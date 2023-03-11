@@ -35,9 +35,10 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
             + "\t\t]\n"
             + "\t}}";
 
+        public bool IsPortraitOnly { get; private set; } = false;
         public bool IsChanged { get; private set; } = false;
         public string FactionId { get; private set; } = null!;
-        public string FactionName { get; private set; } = null;
+        public string FactionName { get; private set; } = null!;
         public string BaseDirectory { get; private set; } = null!;
         public string FileName { get; private set; } = null!;
         public string FileFullName { get; private set; } = null!;
@@ -62,6 +63,7 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
             out string errMessage
         )
         {
+            IsPortraitOnly = jsonObject.Count > 1;
             errMessage = string.Empty;
             FileFullName = file;
             FileName = Path.GetFileName(file);
@@ -145,7 +147,7 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
 
         public static void CreateTo(string file)
         {
-            SaveToNewFile(file, string.Format(_PortraitBaseData, string.Empty, string.Empty));
+            SaveTo(file, string.Format(_PortraitBaseData, string.Empty, string.Empty));
         }
 
         public static FactionPortrait CreateTo(
@@ -159,7 +161,7 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
                 if (Create(file, baseDirectory, out errMessage) is FactionPortrait factionPortrait)
                     return factionPortrait;
             }
-            SaveToNewFile(file, string.Format(_PortraitBaseData, string.Empty, string.Empty));
+            SaveTo(file, string.Format(_PortraitBaseData, string.Empty, string.Empty));
             return Create(file, baseDirectory, out errMessage)!;
         }
 
@@ -239,31 +241,42 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
             }
         }
 
-        public bool Save() => SaveTo(FileFullName, false);
+        private string GetPortraitsData()
+        {
+            return string.Format(
+                _PortraitBaseData,
+                string.Join(
+                    ",\n\t\t\t",
+                    MalePortraitsPath.Select(s => @$"""{s.Replace("\\", "/")}""")
+                ),
+                string.Join(
+                    ",\n\t\t\t",
+                    FemalePortraitsPath.Select(s => @$"""{s.Replace("\\", "/")}""")
+                )
+            );
+        }
 
-        public bool SaveTo(string file) => SaveTo(file, true);
-
-        private bool SaveTo(string file, bool createNew = false)
+        public bool Save()
         {
             try
             {
-                string portraitsData = string.Format(
-                    _PortraitBaseData,
-                    string.Join(
-                        ",\n\t\t\t",
-                        MalePortraitsPath.Select(s => @$"""{s.Replace("\\", "/")}""")
-                    ),
-                    string.Join(
-                        ",\n\t\t\t",
-                        FemalePortraitsPath.Select(s => @$"""{s.Replace("\\", "/")}""")
-                    )
-                );
-                if (createNew)
-                {
-                    SaveToNewFile(file, portraitsData);
-                    return true;
-                }
-                return SaveToOriginalFile(file, portraitsData);
+                return ReplaceToFile(FileFullName, GetPortraitsData());
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"保存势力肖像时出现错误\n势力: {FactionName} 文件路径: {FileFullName}", ex);
+                return false;
+            }
+        }
+
+        public bool SaveTo(string file)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(Path.GetExtension(file)))
+                    file += _FactionExtension;
+                File.WriteAllText(file, $"{{\n{GetPortraitsData()}\n}}");
+                return true;
             }
             catch (Exception ex)
             {
@@ -272,7 +285,20 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
             }
         }
 
-        private static bool SaveToOriginalFile(string file, string portraitsData)
+        public bool ReplaceTo(string file)
+        {
+            try
+            {
+                return ReplaceToFile(file, GetPortraitsData());
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"保存势力肖像时出现错误\n势力: {FactionName} 文件路径: {file}", ex);
+                return false;
+            }
+        }
+
+        private static bool ReplaceToFile(string file, string portraitsData)
         {
             string jsonData = File.ReadAllText(file);
             if (
@@ -285,11 +311,33 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
             return true;
         }
 
-        private static void SaveToNewFile(string file, string portraitsData)
+        public static bool SaveTo(string file, string portraitsData)
         {
-            if (string.IsNullOrWhiteSpace(Path.GetExtension(file)))
-                file += _FactionExtension;
-            File.WriteAllText(file, $"{{\n{portraitsData}\n}}");
+            try
+            {
+                if (string.IsNullOrWhiteSpace(Path.GetExtension(file)))
+                    file += _FactionExtension;
+                File.WriteAllText(file, $"{{\n{portraitsData}\n}}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"保存势力肖像时出现错误\n文件路径: {file}", ex);
+                return false;
+            }
+        }
+
+        public static bool ReplaceTo(string file, string portraitsData)
+        {
+            try
+            {
+                return ReplaceToFile(file, portraitsData);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"保存势力肖像时出现错误\n文件路径: {file}", ex);
+                return false;
+            }
         }
 
         public static string? TryGetFactionPortraitData(string file) =>

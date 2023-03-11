@@ -235,18 +235,18 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             if (_nowSelectedFactionItem.Tag is not GroupData groupData)
                 return;
             _nowGroupData = groupData;
-            MalePortraitFilterText = string.Empty;
-            FemalePortraitFilterText = string.Empty;
-            NowShowMalePortraitItems = groupData.MaleFactionPortraitsItem[
+            MalePortraitsFilterText = string.Empty;
+            FemalePortraitsFilterText = string.Empty;
+            NowShowMalePortraitItems = groupData.MaleFactionPortraitItems[
                 _nowSelectedFactionItem.Id!
             ];
-            NowShowFemalePortraitItems = groupData.FemaleFactionPortraitsItem[
+            NowShowFemalePortraitItems = groupData.FemaleFactionPortraitItems[
                 _nowSelectedFactionItem.Id!
             ];
             NowShowMalePortraitItems.CollectionChanged += (s, e) =>
-                MalePortraitFilter(MalePortraitFilterText);
+                MalePortraitFilter(MalePortraitsFilterText);
             NowShowFemalePortraitItems.CollectionChanged += (s, e) =>
-                FemalePortraitFilter(FemalePortraitFilterText);
+                FemalePortraitFilter(FemalePortraitsFilterText);
             Logger.Info($"切换至 分组: {_nowGroupData.Header} 势力: {_nowSelectedFactionItem.Name}");
         }
 
@@ -256,14 +256,14 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 return;
             if (string.IsNullOrWhiteSpace(filterText))
             {
-                NowShowMalePortraitItems = _nowGroupData.MaleFactionPortraitsItem[
+                NowShowMalePortraitItems = _nowGroupData.MaleFactionPortraitItems[
                     _nowSelectedFactionItem.Id!
                 ];
             }
             else
             {
                 NowShowMalePortraitItems = new(
-                    _nowGroupData.MaleFactionPortraitsItem[_nowSelectedFactionItem.Id!].Where(
+                    _nowGroupData.MaleFactionPortraitItems[_nowSelectedFactionItem.Id!].Where(
                         i =>
                             i.Name!
                                 .ToString()!
@@ -280,14 +280,14 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 return;
             if (string.IsNullOrWhiteSpace(filterText))
             {
-                NowShowFemalePortraitItems = _nowGroupData.FemaleFactionPortraitsItem[
+                NowShowFemalePortraitItems = _nowGroupData.FemaleFactionPortraitItems[
                     _nowSelectedFactionItem.Id!
                 ];
             }
             else
             {
                 NowShowFemalePortraitItems = new(
-                    _nowGroupData.FemaleFactionPortraitsItem[_nowSelectedFactionItem.Id!].Where(
+                    _nowGroupData.FemaleFactionPortraitItems[_nowSelectedFactionItem.Id!].Where(
                         i =>
                             i.Content!
                                 .ToString()!
