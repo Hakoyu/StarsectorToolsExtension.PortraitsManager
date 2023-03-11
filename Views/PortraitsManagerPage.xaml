@@ -187,17 +187,17 @@
           Style="{StaticResource GroupBoxBaseStyle}">
           <Grid>
             <TextBox
-              x:Name="TextBox_MaleSearchPortraits"
+              x:Name="TextBox_MalePortraitsFilter"
               VerticalAlignment="Top"
               Style="{StaticResource TextBoxBaseStyle}"
-              Text="{Binding MalePortraitFilterText, UpdateSourceTrigger=PropertyChanged}" />
+              Text="{Binding MalePortraitsFilterText, UpdateSourceTrigger=PropertyChanged}" />
             <!--  TextBox输入占位符  -->
             <Label
-              Width="{Binding Width, ElementName=TextBox_MaleSearchPortraits}"
-              Height="{Binding Height, ElementName=TextBox_MaleSearchPortraits}"
-              Margin="{Binding Margin, ElementName=TextBox_MaleSearchPortraits}"
-              HorizontalAlignment="{Binding HorizontalAlignment, ElementName=TextBox_MaleSearchPortraits}"
-              VerticalAlignment="{Binding VerticalAlignment, ElementName=TextBox_MaleSearchPortraits}"
+              Width="{Binding Width, ElementName=TextBox_MalePortraitsFilter}"
+              Height="{Binding Height, ElementName=TextBox_MalePortraitsFilter}"
+              Margin="{Binding Margin, ElementName=TextBox_MalePortraitsFilter}"
+              HorizontalAlignment="{Binding HorizontalAlignment, ElementName=TextBox_MalePortraitsFilter}"
+              VerticalAlignment="{Binding VerticalAlignment, ElementName=TextBox_MalePortraitsFilter}"
               Background="{x:Null}"
               Content="搜索肖像"
               FontSize="16"
@@ -209,8 +209,8 @@
                   <Style.Triggers>
                     <MultiDataTrigger>
                       <MultiDataTrigger.Conditions>
-                        <Condition Binding="{Binding Text, ElementName=TextBox_MaleSearchPortraits}" Value="" />
-                        <Condition Binding="{Binding IsFocused, ElementName=TextBox_MaleSearchPortraits}" Value="False" />
+                        <Condition Binding="{Binding Text, ElementName=TextBox_MalePortraitsFilter}" Value="" />
+                        <Condition Binding="{Binding IsFocused, ElementName=TextBox_MalePortraitsFilter}" Value="False" />
                       </MultiDataTrigger.Conditions>
                       <MultiDataTrigger.Setters>
                         <Setter Property="Visibility" Value="Visible" />
@@ -258,17 +258,17 @@
           Style="{StaticResource GroupBoxBaseStyle}">
           <Grid>
             <TextBox
-              x:Name="TextBox_FemaleSearchPortraits"
+              x:Name="TextBox_FemalePortraitsFilter"
               VerticalAlignment="Top"
               Style="{StaticResource TextBoxBaseStyle}"
-              Text="{Binding FemalePortraitFilterText, UpdateSourceTrigger=PropertyChanged}" />
+              Text="{Binding FemalePortraitsFilterText, UpdateSourceTrigger=PropertyChanged}" />
             <!--  TextBox输入占位符  -->
             <Label
-              Width="{Binding Width, ElementName=TextBox_FemaleSearchPortraits}"
-              Height="{Binding Height, ElementName=TextBox_FemaleSearchPortraits}"
-              Margin="{Binding Margin, ElementName=TextBox_FemaleSearchPortraits}"
-              HorizontalAlignment="{Binding HorizontalAlignment, ElementName=TextBox_FemaleSearchPortraits}"
-              VerticalAlignment="{Binding VerticalAlignment, ElementName=TextBox_FemaleSearchPortraits}"
+              Width="{Binding Width, ElementName=TextBox_FemalePortraitsFilter}"
+              Height="{Binding Height, ElementName=TextBox_FemalePortraitsFilter}"
+              Margin="{Binding Margin, ElementName=TextBox_FemalePortraitsFilter}"
+              HorizontalAlignment="{Binding HorizontalAlignment, ElementName=TextBox_FemalePortraitsFilter}"
+              VerticalAlignment="{Binding VerticalAlignment, ElementName=TextBox_FemalePortraitsFilter}"
               Background="{x:Null}"
               Content="搜索肖像"
               FontSize="16"
@@ -280,8 +280,8 @@
                   <Style.Triggers>
                     <MultiDataTrigger>
                       <MultiDataTrigger.Conditions>
-                        <Condition Binding="{Binding Text, ElementName=TextBox_FemaleSearchPortraits}" Value="" />
-                        <Condition Binding="{Binding IsFocused, ElementName=TextBox_FemaleSearchPortraits}" Value="False" />
+                        <Condition Binding="{Binding Text, ElementName=TextBox_FemalePortraitsFilter}" Value="" />
+                        <Condition Binding="{Binding IsFocused, ElementName=TextBox_FemalePortraitsFilter}" Value="False" />
                       </MultiDataTrigger.Conditions>
                       <MultiDataTrigger.Setters>
                         <Setter Property="Visibility" Value="Visible" />

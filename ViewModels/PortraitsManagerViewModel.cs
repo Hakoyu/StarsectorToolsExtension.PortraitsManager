@@ -54,14 +54,14 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         private string _femaleGroupBoxHeader = "女性肖像";
 
         [ObservableProperty]
-        private string _malePortraitFilterText;
+        private string _malePortraitsFilterText;
 
-        partial void OnMalePortraitFilterTextChanged(string value) => MalePortraitFilter(value);
+        partial void OnMalePortraitsFilterTextChanged(string value) => MalePortraitFilter(value);
 
         [ObservableProperty]
-        private string _femalePortraitFilterText;
+        private string _femalePortraitsFilterText;
 
-        partial void OnFemalePortraitFilterTextChanged(string value) => FemalePortraitFilter(value);
+        partial void OnFemalePortraitsFilterTextChanged(string value) => FemalePortraitFilter(value);
 
         [ObservableProperty]
         private bool _isRemindSave = false;
