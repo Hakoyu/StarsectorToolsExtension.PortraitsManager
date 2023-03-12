@@ -19,7 +19,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             InitializeAddFactionWindowViewModel(value);
         }
 
-        private void InitializeAddFactionWindowViewModel(AddFactionWindowViewModel viewModel)
+        private static void InitializeAddFactionWindowViewModel(AddFactionWindowViewModel viewModel)
         {
             viewModel.OKEvent += () =>
             {
@@ -47,12 +47,12 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         private string _femaleGroupBoxHeader = "女性肖像";
 
         [ObservableProperty]
-        private string _malePortraitsFilterText;
+        private string _malePortraitsFilterText = string.Empty;
 
         partial void OnMalePortraitsFilterTextChanged(string value) => MalePortraitFilter(value);
 
         [ObservableProperty]
-        private string _femalePortraitsFilterText;
+        private string _femalePortraitsFilterText = string.Empty;
 
         partial void OnFemalePortraitsFilterTextChanged(string value) => FemalePortraitFilter(value);
 
@@ -71,10 +71,10 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         [ObservableProperty]
         private ObservableCollection<GroupData> _allGroupDatas = new();
 
-        private GroupData _nowGroupData;
+        private GroupData _nowGroupData = null!;
 
         [ObservableProperty]
-        private ObservableCollection<ListBoxItemVM> _nowShowMalePortraitItems;
+        private ObservableCollection<ListBoxItemVM> _nowShowMalePortraitItems = null!;
 
         partial void OnNowShowMalePortraitItemsChanged(ObservableCollection<ListBoxItemVM> value)
         {
@@ -87,7 +87,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         }
 
         [ObservableProperty]
-        private ObservableCollection<ListBoxItemVM> _nowShowFemalePortraitItems;
+        private ObservableCollection<ListBoxItemVM> _nowShowFemalePortraitItems = null!;
 
         partial void OnNowShowFemalePortraitItemsChanged(ObservableCollection<ListBoxItemVM> value)
         {
@@ -119,7 +119,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             }
         }
 
-        private ListBoxItemVM _nowSelectedFactionItem;
+        private ListBoxItemVM _nowSelectedFactionItem = null!;
 
         internal List<ListBoxItemVM> NowSelectedMalePortraitItems { get; private set; }
         internal List<ListBoxItemVM> NowSelectedFemalePortraitItems { get; private set; }

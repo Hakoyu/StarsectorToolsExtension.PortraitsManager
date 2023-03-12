@@ -321,7 +321,7 @@
           Margin="5,0,0,0">
           <ScrollViewer Margin="0,0,0,40" VerticalScrollBarVisibility="Auto">
             <StackPanel>
-              <Expander
+              <!--<Expander
                 Margin="0,0,0,5"
                 Header="打开目录"
                 Style="{StaticResource ExpanderBaseStyle}">
@@ -332,45 +332,8 @@
                     Margin="0,0,0,5"
                     Content="打开组目录"
                     Style="{StaticResource ButtonBaseStyle}" />
-                  <Button
-                    x:Name="Button_OpenFactionDirectory"
-                    Height="30"
-                    Margin="0,0,0,5"
-                    Content="打开势力目录"
-                    Style="{StaticResource ButtonBaseStyle}" />
-                  <Button
-                    x:Name="Button_OpenPortraitDirectory"
-                    Height="30"
-                    Margin="0,0,0,5"
-                    Content="打开肖像目录"
-                    Style="{StaticResource ButtonBaseStyle}" />
-                  <Button
-                    x:Name="Button_OpenPMDirectory"
-                    Height="30"
-                    Margin="0,0,0,5"
-                    Content="打开管理器目录"
-                    Style="{StaticResource ButtonBaseStyle}" />
                 </StackPanel>
-              </Expander>
-              <Expander
-                Margin="0,0,0,5"
-                Header="操作肖像列表"
-                Style="{StaticResource ExpanderBaseStyle}">
-                <StackPanel>
-                  <Button
-                    x:Name="Button_ImportPortraitList"
-                    Height="30"
-                    Margin="0,0,0,5"
-                    Content="导入列表"
-                    Style="{StaticResource ButtonBaseStyle}" />
-                  <Button
-                    x:Name="Button_ExportPortraitList"
-                    Height="30"
-                    Margin="0,0,0,5"
-                    Content="导出列表"
-                    Style="{StaticResource ButtonBaseStyle}" />
-                </StackPanel>
-              </Expander>
+              </Expander>-->
             </StackPanel>
           </ScrollViewer>
           <Button
