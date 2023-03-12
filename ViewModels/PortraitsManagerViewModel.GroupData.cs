@@ -232,26 +232,22 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                                 }
                             ) is MessageBoxVM.Result.Yes
                         )
-                            PortraitsManagerViewModel.Instance.Save();
+                            Save();
                     }
                     CreateBackupDirectory();
-                    if (
-                        SaveFileDialogVM.Show(
-                            new()
-                            {
-                                Title = "选择保存的文件夹",
-                                Filter = $"Zip 文件|*.zip",
-                                FileName = $"{GroupId}.zip",
-                                InitialDirectory = _PMBackupDirectory
-                            }
-                        )
-                            is not string file
-                        || string.IsNullOrWhiteSpace(file)
-                    )
+                    var file = SaveFileDialogVM.Show(
+                        new()
+                        {
+                            Title = "选择保存的文件",
+                            Filter = $"Zip 文件|*.zip",
+                            InitialDirectory = _PMBackupDirectory
+                        }
+                    );
+                    if (string.IsNullOrWhiteSpace(file))
                         return;
                     if (!file.EndsWith(".zip"))
                         file += ".zip";
-                    await BackupToArchiveFile(Path.GetDirectoryName(file)!);
+                    await BackupToArchiveFile(Path.GetDirectoryName(file)!, Path.GetFileNameWithoutExtension(file));
                 };
                 return menuItem;
             }
@@ -1135,7 +1131,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             }
         }
 
-        private async Task BackupToArchiveFile(string destDirectory)
+        private async Task BackupToArchiveFile(string destDirectory, string archiveFileName)
         {
             // 备份数据至压缩文件
             CreateTempBackupDirectory();
@@ -1144,7 +1140,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 factionPortrait.Value.SaveTo(_PMTempFactionsBackupDirectory);
             // 保存肖像数据
             BackupPortraits(_allImageStream.Keys);
-            await ArchiveTempBackupDirectoryToFile(destDirectory);
+            await ArchiveTempBackupDirectoryToFile(destDirectory, archiveFileName);
         }
 
         private async Task BackupFromOriginalFile()
@@ -1160,7 +1156,10 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             var portraitPaths = BackupFactionsFromOriginalFile(fileList);
             // 备份所有引用的肖像
             BackupPortraits(portraitPaths);
-            await ArchiveTempBackupDirectoryToFile(_PMBackupDirectory);
+            // 生成压缩文件名
+            var archiveFileName =
+                $"{GroupId} {nameof(FactionPortrait)} {DateTime.Now:yyyy-MM-ddTHH-mm-ss}";
+            await ArchiveTempBackupDirectoryToFile(_PMBackupDirectory, archiveFileName);
         }
 
         private HashSet<string> BackupFactionsFromOriginalFile(IList<FileInfo> fileList)
@@ -1230,11 +1229,8 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             return false;
         }
 
-        private async Task ArchiveTempBackupDirectoryToFile(string destDirectory)
+        private async Task ArchiveTempBackupDirectoryToFile(string destDirectory, string archiveFileName)
         {
-            // 生成压缩文件名
-            var archiveFileName =
-                $"{GroupId} {nameof(FactionPortrait)} {DateTime.Now:yyyy-MM-ddTHH-mm-ss}";
             await Utils.ArchiveDirectoryToFile(
                 _PMTempBackupDirectory,
                 destDirectory,

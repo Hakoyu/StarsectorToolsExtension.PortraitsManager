@@ -12,7 +12,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
     internal partial class PortraitsManagerViewModel : ObservableObject
     {
         [ObservableProperty]
-        private AddFactionWindowViewModel _addFactionWindowViewModel;
+        private AddFactionWindowViewModel _addFactionWindowViewModel = null!;
 
         partial void OnAddFactionWindowViewModelChanged(AddFactionWindowViewModel value)
         {
@@ -121,8 +121,8 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         private ListBoxItemVM _nowSelectedFactionItem = null!;
 
-        internal List<ListBoxItemVM> NowSelectedMalePortraitItems { get; private set; }
-        internal List<ListBoxItemVM> NowSelectedFemalePortraitItems { get; private set; }
+        internal List<ListBoxItemVM> NowSelectedMalePortraitItems { get; private set; } = null!;
+        internal List<ListBoxItemVM> NowSelectedFemalePortraitItems { get; private set; } = null!;
 
         public PortraitsManagerViewModel()
         { }
