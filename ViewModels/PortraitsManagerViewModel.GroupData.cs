@@ -311,7 +311,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                     var portraitDirectory = Path.Combine(_PMTempBackupDirectory, directoryName);
                     // 移动至新文件夹(重命名至上层文件夹名,让接下来的移动操作变成替换)
                     Directory.Move(_PMTempPortraitsBackupDirectory, portraitDirectory);
-                    // 移动肖像已替换原始文件
+                    // 移动肖像以替换原始文件
                     Utils.MoveDirectory(portraitDirectory, Path.GetDirectoryName(_BaseDirectory)!);
                     // 初始化数据
                     InitializeData();
