@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-using System.Windows.Media.Imaging;
 using HKW.Libs.Log4Cs;
 using StarsectorTools.Libs.Utils;
 
@@ -25,6 +21,7 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
         private const string _StandardFemale = "standard_female";
         private const string _Portraits = "portraits";
         private const string _DisplayName = "displayName";
+
         private const string _PortraitBaseData =
             "\t\"portraits\":{{\n"
             + "\t\t\"standard_male\":[\n"
@@ -53,7 +50,9 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
         public IReadOnlySet<string> AllPortraitsPath => _allPortraitsPath;
 
         #region Ctor
-        public FactionPortrait() { }
+
+        public FactionPortrait()
+        { }
 
         private FactionPortrait(
             JsonObject jsonObject,
@@ -124,7 +123,9 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
             }
             return errSB.Length > 0 ? errSB.Insert(0, "\n女性肖像路径错误:") : null;
         }
-        #endregion
+
+        #endregion Ctor
+
         public static FactionPortrait? Create(
             string file,
             string baseDirectory,

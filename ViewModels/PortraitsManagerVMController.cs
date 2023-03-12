@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using HKW.Libs.Log4Cs;
 using HKW.ViewModels.Controls;
 using HKW.ViewModels.Dialogs;
@@ -128,6 +123,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         }
 
         #region ChangeAllGroupData
+
         private void ChangeAllGroupData(string groupTypeName)
         {
             FactionFilterText = string.Empty;
@@ -224,6 +220,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         }
 
         #region PortraitFilter
+
         private void FactionList_SelectionChangedEvent(ListBoxItemVM item)
         {
             if (item is null || _nowSelectedFactionItem == item)
@@ -297,7 +294,9 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 Logger.Info($"女性肖像列表搜索: {filterText}");
             }
         }
-        #endregion
-        #endregion
+
+        #endregion PortraitFilter
+
+        #endregion ChangeAllGroupData
     }
 }

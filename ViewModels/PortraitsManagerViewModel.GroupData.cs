@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using HKW.Libs.Log4Cs;
 using HKW.ViewModels.Controls;
@@ -219,7 +218,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             MenuItemVM BackupMenuItem()
             {
                 var menuItem = new MenuItemVM();
-                menuItem.Header = "备份至文件";
+                menuItem.Header = "备份至压缩文件";
                 menuItem.CommandEvent += async (o) =>
                 {
                     if (PortraitsManagerViewModel.Instance.IsRemindSave)
@@ -259,9 +258,22 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             MenuItemVM RestoreBackupMenuItem()
             {
                 var menuItem = new MenuItemVM();
-                menuItem.Header = "从备份文件还原";
+                menuItem.Header = "从压缩文件还原";
                 menuItem.CommandEvent += async (o) =>
                 {
+                    if (IsChangeed)
+                    {
+                        if (
+                            MessageBoxVM.Show(
+                                new("当前模组未保存,需要保存吗?")
+                                {
+                                    Icon = MessageBoxVM.Icon.Question,
+                                    Button = MessageBoxVM.Button.YesNo
+                                }
+                            ) is MessageBoxVM.Result.No
+                        )
+                            return;
+                    }
                     CreateBackupDirectory();
                     var fileNames = OpenFileDialogVM.Show(
                         new()
@@ -481,6 +493,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         }
 
         #region ParseBaseDirectory
+
         private void ParseBaseDirectory(string baseDirectory, string factionDirectory)
         {
             if (Utils.GetAllSubFiles(factionDirectory) is not List<FileInfo> fileList)
@@ -564,8 +577,11 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                     )
                 );
         }
-        #endregion
+
+        #endregion ParseBaseDirectory
+
         #region CreateFactionItem
+
         private ListBoxItemVM CreateFactionItem(string faction, string factionFile)
         {
             var item = new ListBoxItemVM();
@@ -750,7 +766,8 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             viewModel.ShowDialog();
         }
 
-        #endregion
+        #endregion CreateFactionItem
+
         private ListBoxItemVM CreatePortraitItem(
             Gender gender,
             string faction,
@@ -769,6 +786,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         }
 
         #region CreatePortraitContextMenu
+
         private ContextMenuVM CreatePortraitContextMenu(string faction, Gender gender)
         {
             return new(
@@ -901,9 +919,11 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 factionPortrait.Remove(portraitPath, gender);
             }
         }
-        #endregion
+
+        #endregion TryRemoveSelectedPortraits
 
         #region TryDeleteSelectedPortraits
+
         private void DeleteSelectedPortraits(string faction, Gender gender)
         {
             var selectedPortraitItems =
@@ -991,9 +1011,13 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             }
             return useStatus;
         }
-        #endregion
-        #endregion
+
+        #endregion TryDeleteSelectedPortraits
+
+        #endregion CreatePortraitContextMenu
+
         #region TryAddPortrait
+
         public void TryAddPortrait(IEnumerable<string> pathList, string faction, Gender gender)
         {
             StringBuilder errSB = new();
@@ -1079,14 +1103,16 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             }
             return false;
         }
-        #endregion
+
+        #endregion TryAddPortrait
+
         #region Save
+
         public async void Save()
         {
             if (IsChangeed is false)
                 return;
             using var handler = PendingBoxVM.Show("正在保存");
-            await Task.Delay(1);
             DeletePlanToDeleteFactions();
             await SaveAllFactionPortrait();
             DeletePlanToDeleteFiles();
@@ -1235,8 +1261,10 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             Directory.Delete(_PMTempBackupDirectory, true);
         }
 
-        #endregion
+        #endregion Save
+
         #region Close
+
         public void Close()
         {
             foreach (var kv in _allImageStream)
@@ -1250,7 +1278,9 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             MaleFactionPortraitItems.Clear();
             FemaleFactionPortraitItems.Clear();
         }
-        #endregion
+
+        #endregion Close
+
         private static string GetVanillaFactionI18n(string factionId) =>
             VanillaFactions.AllVanillaFactionsI18n.TryGetValue(factionId, out var name)
                 ? name

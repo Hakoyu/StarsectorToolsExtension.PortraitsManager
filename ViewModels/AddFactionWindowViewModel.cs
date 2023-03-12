@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HKW.ViewModels.Controls;
@@ -37,7 +33,8 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         public GroupData BaseGroupData { get; set; } = null!;
 
-        public AddFactionWindowViewModel() { }
+        public AddFactionWindowViewModel()
+        { }
 
         public AddFactionWindowViewModel(object window)
             : base(window)

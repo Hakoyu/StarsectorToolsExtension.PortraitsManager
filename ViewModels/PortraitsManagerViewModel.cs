@@ -1,18 +1,11 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using HKW.Libs.Log4Cs;
 using HKW.ViewModels.Controls;
-using HKW.ViewModels.Dialogs;
-using StarsectorTools.Libs.GameInfo;
 using StarsectorTools.Libs.Utils;
-using StarsectorToolsExtension.PortraitsManager.Models;
 
 namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 {
@@ -67,7 +60,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         private bool _isRemindSave = false;
 
         [ObservableProperty]
-        ComboBoxVM _comboBox_GroupList =
+        private ComboBoxVM _comboBox_GroupList =
             new()
             {
                 new() { Content = "原版", Tag = _StrVanilla },
@@ -131,7 +124,8 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         internal List<ListBoxItemVM> NowSelectedMalePortraitItems { get; private set; }
         internal List<ListBoxItemVM> NowSelectedFemalePortraitItems { get; private set; }
 
-        public PortraitsManagerViewModel() { }
+        public PortraitsManagerViewModel()
+        { }
 
         public PortraitsManagerViewModel(bool noop)
         {
