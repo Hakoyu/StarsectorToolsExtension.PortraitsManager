@@ -269,18 +269,17 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
             }
         }
 
-        public bool SaveTo(string file)
+        public bool SaveTo(string destDirectory)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(Path.GetExtension(file)))
-                    file += _FactionExtension;
-                File.WriteAllText(file, $"{{\n{GetPortraitsData()}\n}}");
+                destDirectory = Path.Combine(destDirectory, FileName);
+                File.WriteAllText(destDirectory, $"{{\n{GetPortraitsData()}\n}}");
                 return true;
             }
             catch (Exception ex)
             {
-                Logger.Error($"保存势力肖像时出现错误\n势力: {FactionName} 文件路径: {file}", ex);
+                Logger.Error($"保存势力肖像时出现错误\n势力: {FactionName} 文件路径: {destDirectory}", ex);
                 return false;
             }
         }

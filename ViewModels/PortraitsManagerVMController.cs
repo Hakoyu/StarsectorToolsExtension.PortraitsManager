@@ -53,7 +53,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             CleanShowPortraitItems();
         }
 
-        private void CleanShowPortraitItems()
+        public void CleanShowPortraitItems()
         {
             NowShowMalePortraitItems = null!;
             NowShowFemalePortraitItems = null!;

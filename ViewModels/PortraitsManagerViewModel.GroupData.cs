@@ -21,48 +21,57 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         /// <summary>组Id</summary>
         public string GroupId { get; private set; }
 
+        public bool IsChangeed { get; private set; }
+
         /// <summary>根目录</summary>
-        public string BaseDirectory { get; private set; }
+        private readonly string _BaseDirectory;
 
         /// <summary>势力目录</summary>
-        public string FactionsDirectory => $"{BaseDirectory}\\data\\world\\factions";
+        private readonly string _FactionsDirectory;
 
         /// <summary>肖像目录</summary>
-        public string PortraitsDirectory => $"{BaseDirectory}\\graphics\\portraits";
+        private readonly string _PortraitsDirectory;
 
         /// <summary>拓展根目录</summary>
-        public string PMDirectory =>
-            $"{BaseDirectory}\\{nameof(StarsectorToolsExtension)}.PortraitsManager";
+        private readonly string _PMDirectory;
 
         /// <summary>肖像目录</summary>
-        public string PMPortraitsDirectory => $"{PMDirectory}\\Portraits";
+        private readonly string _PMPortraitsDirectory;
 
         /// <summary>肖像相对目录</summary>
-        public string PMPortraitsDirectoryPath =>
-            $"{nameof(StarsectorToolsExtension)}.PortraitsManager\\Portraits";
+        private readonly string _PMPortraitsDirectoryPath;
 
         /// <summary>备份目录</summary>
-        public string PMBackupDirectory => $"{PMDirectory}\\Backup";
+        private readonly string _PMBackupDirectory;
 
         /// <summary>备份文件</summary>
-        public string PMBackupZIPFile => $"{PMBackupDirectory}\\Backup.zip";
+        private readonly string _PMBackupZIPFile;
 
         /// <summary>势力备份目录</summary>
-        public string PMFactionsBackupDirectory => $"{PMBackupDirectory}\\Faction";
+        private readonly string _PMFactionsBackupDirectory;
 
         /// <summary>肖像备份目录</summary>
-        public string PMPortraitsBackupDirectory => $"{PMBackupDirectory}\\Portraits";
+        private readonly string _PMPortraitsBackupDirectory;
+
+        /// <summary>临时肖像备份目录</summary>
+        private readonly string _PMTempBackupDirectory;
+
+        /// <summary>临时肖像备份目录</summary>
+        private readonly string _PMTempFactionsBackupDirectory;
+
+        /// <summary>临时肖像备份目录</summary>
+        private readonly string _PMTempPortraitsBackupDirectory;
 
         [ObservableProperty]
         private string _header = string.Empty;
-
-        [ObservableProperty]
-        private bool _isEnabled = true;
 
         partial void OnHeaderChanged(string vaule)
         {
             _header = $"{vaule} ({_allFactionPortraits.Count},{_allImageStream.Count})";
         }
+
+        [ObservableProperty]
+        private bool _isEnabled = true;
 
         [ObservableProperty]
         private string _toolTip = string.Empty;
@@ -96,8 +105,28 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         {
             ToolTip = groupName;
             GroupId = groupId;
-            BaseDirectory = baseDirectory;
-            ParseBaseDirectory(BaseDirectory, FactionsDirectory);
+
+            _BaseDirectory = baseDirectory;
+            _FactionsDirectory = $"{_BaseDirectory}\\data\\world\\factions";
+            _PortraitsDirectory = $"{_BaseDirectory}\\graphics\\portraits";
+            _PMDirectory = $"{_BaseDirectory}\\{nameof(StarsectorToolsExtension)}.PortraitsManager";
+            _PMPortraitsDirectory = $"{_PMDirectory}\\Portraits";
+            _PMPortraitsDirectoryPath =
+                $"{nameof(StarsectorToolsExtension)}.PortraitsManager\\Portraits";
+            _PMBackupDirectory = $"{_PMDirectory}\\Backup";
+            _PMBackupZIPFile = $"{_PMBackupDirectory}\\Backup.zip";
+            _PMFactionsBackupDirectory = $"{_PMBackupDirectory}\\Faction";
+            _PMPortraitsBackupDirectory = $"{_PMBackupDirectory}\\Portraits";
+            _PMTempBackupDirectory = $"{_PMBackupDirectory}\\Backup";
+            _PMTempFactionsBackupDirectory = $"{_PMBackupDirectory}\\Backup\\Factions";
+            _PMTempPortraitsBackupDirectory = $"{_PMBackupDirectory}\\Backup\\Portraits";
+
+            InitializeData();
+        }
+
+        private void InitializeData()
+        {
+            ParseBaseDirectory(_BaseDirectory, _FactionsDirectory);
             SetGroupDataContextMenu();
             RefreshDispalyData(false);
         }
@@ -110,7 +139,8 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                     list.Add(OpenDirectoryMenuItem());
                     list.Add(AddFactionMenuItem());
                     list.Add(CleanAllFactionPortraitsMenuItem());
-                    list.Add(RestoreAllBackupMenuItem());
+                    list.Add(BackupMenuItem());
+                    list.Add(RestoreBackupMenuItem());
                 }
             );
             MenuItemVM OpenDirectoryMenuItem()
@@ -122,7 +152,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 menuItem.Add(OpenPMDirectoryMenuItem());
                 menuItem.CommandEvent += (o) =>
                 {
-                    Utils.OpenLink(BaseDirectory);
+                    Utils.OpenLink(_BaseDirectory);
                 };
                 return menuItem;
                 MenuItemVM OpenBaseDirectoryMenuItem()
@@ -131,7 +161,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                     menuItem.Header = "打开模组文件夹";
                     menuItem.CommandEvent += (o) =>
                     {
-                        Utils.OpenLink(BaseDirectory);
+                        Utils.OpenLink(_BaseDirectory);
                     };
                     return menuItem;
                 }
@@ -141,12 +171,12 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                     menuItem.Header = "打开肖像管理器文件夹";
                     menuItem.CommandEvent += (o) =>
                     {
-                        if (!Directory.Exists(PMDirectory))
+                        if (!Directory.Exists(_PMDirectory))
                         {
                             MessageBoxVM.Show(new("肖像管理器文件夹不存在"));
                             return;
                         }
-                        Utils.OpenLink(PMDirectory);
+                        Utils.OpenLink(_PMDirectory);
                     };
                     return menuItem;
                 }
@@ -190,41 +220,104 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 };
                 return menuItem;
             }
-            MenuItemVM RestoreAllBackupMenuItem()
+            MenuItemVM BackupMenuItem()
             {
                 var menuItem = new MenuItemVM();
-                menuItem.Header = "还原全部备份";
+                menuItem.Header = "备份至文件";
                 menuItem.CommandEvent += async (o) =>
                 {
-                    if (!Directory.Exists(PMBackupZIPFile))
+                    if (PortraitsManagerViewModel.Instance.IsRemindSave)
                     {
-                        MessageBoxVM.Show(new("肖像管理器文件夹不存在"));
+                        if (
+                            MessageBoxVM.Show(
+                                new("当前数据未保存,确定要保存吗")
+                                {
+                                    Icon = MessageBoxVM.Icon.Question,
+                                    Button = MessageBoxVM.Button.YesNo
+                                }
+                            ) is MessageBoxVM.Result.Yes
+                        )
+                            PortraitsManagerViewModel.Instance.Save();
+                    }
+                    CreateBackupDirectory();
+                    if (
+                        SaveFileDialogVM.Show(
+                            new()
+                            {
+                                Title = "选择保存的文件夹",
+                                Filter = $"Zip 文件|*.zip",
+                                FileName = $"{GroupId}.zip",
+                                InitialDirectory = _PMBackupDirectory
+                            }
+                        )
+                            is not string file
+                        || string.IsNullOrWhiteSpace(file)
+                    )
+                        return;
+                    if (!file.EndsWith(".zip"))
+                        file += ".zip";
+                    await BackupToArchiveFile(Path.GetDirectoryName(file)!);
+                };
+                return menuItem;
+            }
+            MenuItemVM RestoreBackupMenuItem()
+            {
+                var menuItem = new MenuItemVM();
+                menuItem.Header = "从备份文件还原";
+                menuItem.CommandEvent += async (o) =>
+                {
+                    CreateBackupDirectory();
+                    var fileNames = OpenFileDialogVM.Show(
+                        new()
+                        {
+                            Title = "选择备份文件",
+                            Filter = $"Zip 文件|*.zip",
+                            InitialDirectory = _PMBackupDirectory
+                        }
+                    );
+                    if (fileNames?.FirstOrDefault(defaultValue: null) is not string fileName)
+                        return;
+                    CreateTempBackupDirectory();
+                    if (
+                        await Utils.UnArchiveFileToDirectory(fileName, _PMTempBackupDirectory)
+                        is false
+                    )
+                    {
+                        MessageBoxVM.Show(new("文件解压错误"));
                         return;
                     }
+                    if (
+                        Utils.GetAllSubFiles(_PMTempFactionsBackupDirectory)
+                        is not List<FileInfo> fileList
+                    )
+                        return;
+                    // 从文件读取备份的势力肖像信息
+                    foreach (var file in fileList)
+                    {
+                        var portraitData = FactionPortrait.TryGetFactionPortraitData(
+                            file.FullName
+                        )!;
+                        var factionFile = Path.Combine(_FactionsDirectory, file.Name);
+                        // 如果存在势力文件,则替换,否则创建
+                        if (File.Exists(factionFile))
+                            FactionPortrait.ReplaceTo(factionFile, portraitData);
+                        else
+                            FactionPortrait.SaveTo(factionFile, portraitData);
+                    }
+                    // 清空所有数据
+                    Close();
+                    // 获取上层文件夹名
+                    var directoryName = Path.GetFileName(_BaseDirectory);
+                    var portraitDirectory = Path.Combine(_PMTempBackupDirectory, directoryName);
+                    // 移动至新文件夹(重命名至商城文件夹名,让接下来的移动操作变成替换)
+                    Directory.Move(_PMTempPortraitsBackupDirectory, portraitDirectory);
+                    // 移动肖像已替换原始文件
+                    Utils.MoveDirectory(portraitDirectory, Path.GetDirectoryName(_BaseDirectory)!);
+                    // 初始化数据
+                    InitializeData();
+                    DeleteTempBackupDirectory();
+                    PortraitsManagerViewModel.Instance.CleanShowPortraitItems();
                     // TODO: 还原备份
-                    using var handler = PendingBoxVM.Show("正在还原");
-                    // 解压备份文件
-                    await Utils.UnArchiveFileToDir(PMBackupZIPFile, PMBackupDirectory);
-                    // 所有引用并删除文件
-                    foreach (var path in _allImageStream)
-                    {
-                        path.Value.Close();
-                        _planToDeletePortraitPaths.Add(path.Key);
-                    }
-                    // 移动肖像
-                    Utils.CopyDirectory(PMPortraitsBackupDirectory, BaseDirectory);
-                    // 获取势力肖像信息
-                    foreach (var file in new DirectoryInfo(PMFactionsBackupDirectory).GetFiles())
-                    {
-                        var factionPortraitData = FactionPortrait.TryGetFactionPortraitData(file.FullName);
-
-                    }
-                    RefreshDispalyData();
-                    var faction = FactionList.SelectedItem!.Id!;
-                    PortraitsManagerViewModel.Instance.NowShowMalePortraitItems =
-                        MaleFactionPortraitItems[faction];
-                    PortraitsManagerViewModel.Instance.NowShowFemalePortraitItems =
-                        FemaleFactionPortraitItems[faction];
                 };
                 return menuItem;
             }
@@ -232,7 +325,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         private void RestoreFactionBackup(string faction, string file)
         {
-            var factionPortrait = FactionPortrait.Create(file, BaseDirectory, out _)!;
+            var factionPortrait = FactionPortrait.Create(file, _BaseDirectory, out _)!;
             _allFactionPortraits[faction] = factionPortrait;
             var maleCollection = new ObservableCollection<ListBoxItemVM>();
             var femaleCollection = new ObservableCollection<ListBoxItemVM>();
@@ -261,10 +354,10 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         private void AddFaction(string faction)
         {
-            var file = FactionPortrait.CombineFactionPath(FactionsDirectory, faction);
+            var file = FactionPortrait.CombineFactionPath(_FactionsDirectory, faction);
             FactionPortrait.CreateTo(file);
             _planToDeleteFaction.Remove(faction);
-            TryGetFactionPortrait(BaseDirectory, file);
+            TryGetFactionPortrait(_BaseDirectory, file);
             RefreshDispalyData();
         }
 
@@ -282,8 +375,8 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         private void RenameFaction(string faction, string newFaction)
         {
             var item = FactionList.First(i => i.Id == faction);
-            var file = FactionPortrait.CombineFactionPath(FactionsDirectory, faction);
-            var newFactionFile = FactionPortrait.CombineFactionPath(FactionsDirectory, newFaction);
+            var file = FactionPortrait.CombineFactionPath(_FactionsDirectory, faction);
+            var newFactionFile = FactionPortrait.CombineFactionPath(_FactionsDirectory, newFaction);
             File.WriteAllText(newFactionFile, File.ReadAllText(file));
             Utils.DeleteFileToRecycleBin(file);
             // 重命名势力肖像集
@@ -363,6 +456,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         {
             RefreshHeader();
             RefreshFactionItems();
+            IsChangeed = isRemindSave;
             PortraitsManagerViewModel.Instance.IsRemindSave = isRemindSave;
         }
 
@@ -516,7 +610,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 {
                     if (o is not ListBoxItemVM item)
                         return;
-                    Utils.OpenLink(Path.Combine(BaseDirectory, item.ToolTip!.ToString()!));
+                    Utils.OpenLink(Path.Combine(_BaseDirectory, item.ToolTip!.ToString()!));
                 };
                 return menuItem;
             }
@@ -698,7 +792,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 {
                     if (o is not ListBoxItemVM item)
                         return;
-                    Utils.OpenLink(Path.Combine(BaseDirectory, item.ToolTip!.ToString()!));
+                    Utils.OpenLink(Path.Combine(_BaseDirectory, item.ToolTip!.ToString()!));
                 };
                 return menuItem;
             }
@@ -711,7 +805,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                     if (o is not ListBoxItemVM item)
                         return;
                     Utils.OpenDirectoryAndLocateFile(
-                        Path.Combine(BaseDirectory, item.ToolTip!.ToString()!)
+                        Path.Combine(_BaseDirectory, item.ToolTip!.ToString()!)
                     );
                 };
                 return menuItem;
@@ -935,8 +1029,8 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 return false;
             var filePath = file.Replace(commonPath, "");
             var fileName = Path.GetFileNameWithoutExtension(filePath);
-            var pmPortraitsPath = Path.Combine(PMPortraitsDirectoryPath, filePath);
-            var pmPortraitsFullName = Path.Combine(PMPortraitsDirectory, filePath);
+            var pmPortraitsPath = Path.Combine(_PMPortraitsDirectoryPath, filePath);
+            var pmPortraitsFullName = Path.Combine(_PMPortraitsDirectory, filePath);
             var pmPortraitsDirectory = Path.GetDirectoryName(pmPortraitsFullName);
             if (!Directory.Exists(pmPortraitsDirectory))
                 Directory.CreateDirectory(pmPortraitsDirectory!);
@@ -967,19 +1061,22 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             return true;
         }
 
-        private bool CheckFileIsImage(string file)
+        private static bool CheckFileIsImage(string file)
         {
             using FileStream fs = new(file, FileMode.Open);
-            byte[] head = new byte[4];
+            var head = new byte[4];
             fs.Read(head);
-            var pngHead = BitConverter.ToUInt32(head.Reverse().ToArray());
+            Array.Reverse(head);
+            var pngHead = BitConverter.ToUInt32(head);
             if (pngHead is 0x89504E47)
             {
                 fs.Seek(16, SeekOrigin.Begin);
                 fs.Read(head);
-                int width = BitConverter.ToInt32(head.Reverse().ToArray());
+                Array.Reverse(head);
+                int width = BitConverter.ToInt32(head);
                 fs.Read(head);
-                int height = BitConverter.ToInt32(head.Reverse().ToArray());
+                Array.Reverse(head);
+                int height = BitConverter.ToInt32(head);
                 fs.Close();
                 if (width is 128 && height is 128)
                     return true;
@@ -990,11 +1087,14 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         #region Save
         public async void Save()
         {
+            if (IsChangeed is false)
+                return;
             using var handler = PendingBoxVM.Show("正在保存");
             await Task.Delay(1);
             DeletePlanToDeleteFactions();
             await SaveAllFactionPortrait();
             DeletePlanToDeleteFiles();
+            IsChangeed = false;
         }
 
         private async Task SaveAllFactionPortrait()
@@ -1006,59 +1106,68 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                     continue;
                 if (!isChanged)
                 {
-                    await BackupAllData();
+                    await BackupFromOriginalFile();
                     isChanged = true;
                 }
                 factionPortrait.Value.Save();
             }
         }
 
-        private async Task BackupAllData()
+        private async Task BackupToArchiveFile(string destDirectory)
         {
-            // 备份文件然后做成压缩包
-            CreateBackupDirectory();
-            if (File.Exists(PMBackupZIPFile))
-                return;
-            var tempBackupDirectory = $"{PMBackupDirectory}\\Backup";
-            var tempFactionsBackupDirectory = $"{PMBackupDirectory}\\Backup\\Factions";
-            var tempPortraitsBackupDirectory = $"{PMBackupDirectory}\\Backup\\Portraits";
-            Directory.CreateDirectory(tempFactionsBackupDirectory);
-            Directory.CreateDirectory(tempPortraitsBackupDirectory);
-            if (Utils.GetAllSubFiles(FactionsDirectory) is not List<FileInfo> fileList)
-                return;
-            // 备份势力并获取所有引用的肖像
-            var portraitPaths = BackupFactions(fileList, tempFactionsBackupDirectory);
-            // 备份所有引用的肖像
-            BackupPortraits(portraitPaths, tempPortraitsBackupDirectory);
-            await Utils.ArchiveDirToDir(tempBackupDirectory, PMBackupDirectory);
-            Directory.Delete(tempBackupDirectory, true);
+            // 备份数据至压缩文件
+            CreateTempBackupDirectory();
+            // 保存势力数据
+            foreach (var factionPortrait in _allFactionPortraits)
+                factionPortrait.Value.SaveTo(_PMTempFactionsBackupDirectory);
+            // 保存肖像数据
+            BackupPortraits(_allImageStream.Keys);
+            await ArchiveTempBackupDirectoryToFile(destDirectory);
         }
 
-        private HashSet<string> BackupFactions(IList<FileInfo> fileList, string tempFactionsBackupDirectory)
+        private async Task BackupFromOriginalFile()
+        {
+            // 备份原始文件然后做成压缩包
+            CreateBackupDirectory();
+            CreateTempBackupDirectory();
+            if (File.Exists(_PMBackupZIPFile))
+                return;
+            if (Utils.GetAllSubFiles(_FactionsDirectory) is not List<FileInfo> fileList)
+                return;
+            // 备份势力并获取所有引用的肖像
+            var portraitPaths = BackupFactionsFromOriginalFile(fileList);
+            // 备份所有引用的肖像
+            BackupPortraits(portraitPaths);
+            await ArchiveTempBackupDirectoryToFile(_PMBackupDirectory);
+        }
+
+        private HashSet<string> BackupFactionsFromOriginalFile(IList<FileInfo> fileList)
         {
             var portraitPaths = new HashSet<string>();
             foreach (var file in fileList)
             {
                 if (
-                    FactionPortrait.Create(file.FullName, BaseDirectory, out _)
+                    FactionPortrait.Create(file.FullName, _BaseDirectory, out _)
                     is not FactionPortrait factionPortrait
                 )
                     continue;
                 foreach (var portraitPath in factionPortrait.AllPortraitsPath)
                     portraitPaths.Add(portraitPath);
-                factionPortrait.SaveTo(Path.Combine(tempFactionsBackupDirectory, file.Name));
+                factionPortrait.SaveTo(_PMTempFactionsBackupDirectory);
             }
             return portraitPaths;
         }
 
-        private void BackupPortraits(ISet<string> portraitPaths, string tempPortraitsBackupDirectory)
+        private void BackupPortraits(IEnumerable<string> portraitPaths)
         {
+            // 基于 _BaseDirectory 构建文件树
+            // 存入 _PMTempPortraitsBackupDirectory
             foreach (var path in portraitPaths)
             {
-                var sourceFileName = Path.Combine(BaseDirectory, path);
-                var destFileName = Path.Combine(tempPortraitsBackupDirectory, path);
-                Directory.CreateDirectory(Path.GetDirectoryName(destFileName)!);
-                File.Copy(sourceFileName, destFileName);
+                var sourceFile = Path.Combine(_BaseDirectory, path);
+                var destFile = Path.Combine(_PMTempPortraitsBackupDirectory, path);
+                Directory.CreateDirectory(Path.GetDirectoryName(destFile)!);
+                File.Copy(sourceFile, destFile);
             }
         }
 
@@ -1069,7 +1178,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             {
                 _allImageStream[portraitPath].Close();
                 _allImageStream.Remove(portraitPath);
-                var portraitFile = Path.Combine(BaseDirectory, portraitPath);
+                var portraitFile = Path.Combine(_BaseDirectory, portraitPath);
                 if (!TryDeletePortraitDirectory(portraitFile))
                     Utils.DeleteFileToRecycleBin(portraitFile);
             }
@@ -1080,7 +1189,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         {
             foreach (var faction in _planToDeleteFaction)
             {
-                var file = FactionPortrait.CombineFactionPath(FactionsDirectory, faction);
+                var file = FactionPortrait.CombineFactionPath(_FactionsDirectory, faction);
                 Utils.DeleteFileToRecycleBin(file);
             }
             _planToDeleteFaction.Clear();
@@ -1089,7 +1198,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         private bool TryDeletePortraitDirectory(string portraitFile)
         {
             var portraitDirectory = Path.GetDirectoryName(portraitFile)!;
-            if (portraitDirectory.EndsWith(PMPortraitsDirectoryPath))
+            if (portraitDirectory.EndsWith(_PMPortraitsDirectoryPath))
                 return false;
             if (Directory.GetFiles(portraitDirectory)?.Length is 1)
             {
@@ -1099,10 +1208,35 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             return false;
         }
 
+        private async Task ArchiveTempBackupDirectoryToFile(string destDirectory)
+        {
+            // 生成压缩文件名
+            var archiveFileName =
+                $"{GroupId} {nameof(FactionPortrait)} {DateTime.Now:yyyy-MM-ddTHH-mm-ss}";
+            await Utils.ArchiveDirectoryToFile(
+                _PMTempBackupDirectory,
+                destDirectory,
+                archiveFileName
+            );
+            // 完成后删除临时备份文件夹
+            DeleteTempBackupDirectory();
+        }
+
         private void CreateBackupDirectory()
         {
-            Directory.CreateDirectory(PMDirectory);
-            Directory.CreateDirectory(PMBackupDirectory);
+            Directory.CreateDirectory(_PMDirectory);
+            Directory.CreateDirectory(_PMBackupDirectory);
+        }
+
+        private void CreateTempBackupDirectory()
+        {
+            Directory.CreateDirectory(_PMTempFactionsBackupDirectory);
+            Directory.CreateDirectory(_PMTempPortraitsBackupDirectory);
+        }
+
+        private void DeleteTempBackupDirectory()
+        {
+            Directory.Delete(_PMTempBackupDirectory, true);
         }
 
         #endregion
@@ -1111,6 +1245,14 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         {
             foreach (var kv in _allImageStream)
                 kv.Value.Close();
+            _allImageStream.Clear();
+            _allFactionPortraits.Clear();
+            _planToDeleteFaction.Clear();
+            _planToDeletePortraitPaths.Clear();
+            FactionList.Clear();
+            ContextMenu.Clear();
+            MaleFactionPortraitItems.Clear();
+            FemaleFactionPortraitItems.Clear();
         }
         #endregion
         private static string GetVanillaFactionI18n(string factionId) =>
