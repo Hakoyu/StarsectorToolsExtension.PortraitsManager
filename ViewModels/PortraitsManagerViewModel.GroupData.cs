@@ -150,10 +150,6 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 menuItem.ItemsSource = new();
                 menuItem.Add(OpenBaseDirectoryMenuItem());
                 menuItem.Add(OpenPMDirectoryMenuItem());
-                menuItem.CommandEvent += (o) =>
-                {
-                    Utils.OpenLink(_BaseDirectory);
-                };
                 return menuItem;
                 MenuItemVM OpenBaseDirectoryMenuItem()
                 {
