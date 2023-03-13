@@ -96,7 +96,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         private void RefreshFemaleGroupBoxHeader()
         {
-            FemaleGroupBoxHeader = $"女性肖像 ({NowShowMalePortraitItems?.Count})";
+            FemaleGroupBoxHeader = $"女性肖像 ({NowShowFemalePortraitItems?.Count})";
         }
 
         [ObservableProperty]

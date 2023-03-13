@@ -44,7 +44,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
         private readonly string _PMBackupDirectory;
 
         /// <summary>备份文件</summary>
-        private readonly string _PMBackupZIPFile;
+        private readonly string _PMOriginalBackupFile;
 
         /// <summary>势力备份目录</summary>
         private readonly string _PMFactionsBackupDirectory;
@@ -105,6 +105,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             ToolTip = groupName;
             GroupId = groupId;
 
+            // 初始化目录数据
             _BaseDirectory = baseDirectory;
             _FactionsDirectory = $"{_BaseDirectory}\\data\\world\\factions";
             _PortraitsDirectory = $"{_BaseDirectory}\\graphics\\portraits";
@@ -113,16 +114,17 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             _PMPortraitsDirectoryPath =
                 $"{nameof(StarsectorToolsExtension)}.PortraitsManager\\Portraits";
             _PMBackupDirectory = $"{_PMDirectory}\\Backup";
-            _PMBackupZIPFile = $"{_PMBackupDirectory}\\Backup.zip";
+            _PMOriginalBackupFile = $"{_PMBackupDirectory}\\{GroupId} Original{nameof(FactionPortrait)}.zip";
             _PMFactionsBackupDirectory = $"{_PMBackupDirectory}\\Faction";
             _PMPortraitsBackupDirectory = $"{_PMBackupDirectory}\\Portraits";
             _PMTempBackupDirectory = $"{_PMBackupDirectory}\\Backup";
             _PMTempFactionsBackupDirectory = $"{_PMBackupDirectory}\\Backup\\Factions";
             _PMTempPortraitsBackupDirectory = $"{_PMBackupDirectory}\\Backup\\Portraits";
 
+            // 初始化数据
             InitializeData();
         }
-
+        #region InitializeData
         private void InitializeData()
         {
             ParseBaseDirectory(_BaseDirectory, _FactionsDirectory);
@@ -254,14 +256,14 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             MenuItemVM RestoreBackupMenuItem()
             {
                 var menuItem = new MenuItemVM();
-                menuItem.Header = "从压缩文件还原";
+                menuItem.Header = "从备份文件还原";
                 menuItem.CommandEvent += async (o) =>
                 {
                     if (IsChangeed)
                     {
                         if (
                             MessageBoxVM.Show(
-                                new("当前模组未保存,需要保存吗?")
+                                new("从备份中还原会丢失当前数据,推荐先备份当前数据再继续,确定要继续吗?")
                                 {
                                     Icon = MessageBoxVM.Icon.Question,
                                     Button = MessageBoxVM.Button.YesNo
@@ -295,6 +297,8 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                         is not List<FileInfo> fileList
                     )
                         return;
+                    // 尝试备份原始数据
+                    await BackupOriginalData();
                     // 从文件读取备份的势力肖像信息
                     foreach (var file in fileList)
                     {
@@ -308,8 +312,13 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                         else
                             FactionPortrait.SaveTo(factionFile, portraitData);
                     }
+                    // 获取引用的肖像路径
+                    var imagePaths = _allImageStream.Keys.ToList();
                     // 清空所有数据
                     Close();
+                    // 删除引用的肖像
+                    foreach (var imagePath in imagePaths)
+                        File.Delete(Path.Combine(_BaseDirectory, imagePath));
                     // 获取上层文件夹名
                     var directoryName = Path.GetFileName(_BaseDirectory);
                     var portraitDirectory = Path.Combine(_PMTempBackupDirectory, directoryName);
@@ -321,12 +330,12 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                     InitializeData();
                     DeleteTempBackupDirectory();
                     PortraitsManagerViewModel.Instance.CleanShowPortraitItems();
-                    // TODO: 还原备份
+                    RefreshDispalyData(false);
                 };
                 return menuItem;
             }
         }
-
+        #endregion
         private void RestoreFactionBackup(string faction, string file)
         {
             var factionPortrait = FactionPortrait.Create(file, _BaseDirectory, out _)!;
@@ -1124,7 +1133,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                     continue;
                 if (!isChanged)
                 {
-                    await BackupFromOriginalFile();
+                    await BackupOriginalData();
                     isChanged = true;
                 }
                 factionPortrait.Value.Save();
@@ -1143,26 +1152,23 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             await ArchiveTempBackupDirectoryToFile(destDirectory, archiveFileName);
         }
 
-        private async Task BackupFromOriginalFile()
+        private async Task BackupOriginalData()
         {
             // 备份原始文件然后做成压缩包
             CreateBackupDirectory();
-            CreateTempBackupDirectory();
-            if (File.Exists(_PMBackupZIPFile))
+            if (File.Exists(_PMOriginalBackupFile))
                 return;
+            CreateTempBackupDirectory();
             if (Utils.GetAllSubFiles(_FactionsDirectory) is not List<FileInfo> fileList)
                 return;
-            // 备份势力并获取所有引用的肖像
-            var portraitPaths = BackupFactionsFromOriginalFile(fileList);
-            // 备份所有引用的肖像
+            // 保存势力数据
+            var portraitPaths = BackupOriginalFactions(fileList);
+            // 保存肖像数据
             BackupPortraits(portraitPaths);
-            // 生成压缩文件名
-            var archiveFileName =
-                $"{GroupId} {nameof(FactionPortrait)} {DateTime.Now:yyyy-MM-ddTHH-mm-ss}";
-            await ArchiveTempBackupDirectoryToFile(_PMBackupDirectory, archiveFileName);
+            await ArchiveTempBackupDirectoryToFile(_PMBackupDirectory, _PMOriginalBackupFile);
         }
 
-        private HashSet<string> BackupFactionsFromOriginalFile(IList<FileInfo> fileList)
+        private HashSet<string> BackupOriginalFactions(IList<FileInfo> fileList)
         {
             var portraitPaths = new HashSet<string>();
             foreach (var file in fileList)
