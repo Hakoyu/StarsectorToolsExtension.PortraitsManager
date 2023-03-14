@@ -4,9 +4,13 @@
 
 ![](https://s2.loli.net/2023/03/15/VydqwPpRmLUc7SZ.png)
 
+## 下载链接
+
+[Github](https://github.com/Hakoyu/StarsectorToolsExtension.PortraitsManager/releases)
+
 ## 功能介绍
 
-可以方便的对原版或模组的肖像进行修改  
+可以方便的对原版的肖像进行修改  
 可以通过导出压缩包来进行备份或分享给其它人
 
 ## 已实装功能
