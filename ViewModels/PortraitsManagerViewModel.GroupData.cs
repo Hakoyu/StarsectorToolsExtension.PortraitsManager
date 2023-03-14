@@ -265,6 +265,40 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 menuItem.Header = "从压缩文件还原";
                 menuItem.CommandEvent += async (o) =>
                 {
+                    if (PrepareRestoreBackup() is not string archiveFile)
+                    {
+                        DeleteTempBackupDirectory();
+                        return;
+                    }
+                    try
+                    {
+                        if (await UnArchiveAndReplaceFiles(archiveFile) is false)
+                        {
+                            DeleteTempBackupDirectory();
+                            return;
+                        }
+                        TryDeleteAllImages();
+                        MovePortraits();
+                        // 初始化数据
+                        InitializeData();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"文件错误 {archiveFile}", ex);
+                        MessageBoxVM.Show(new($"文件错误\n{archiveFile}") { Icon = MessageBoxVM.Icon.Error });
+                    }
+                    finally
+                    {
+                        DeleteTempBackupDirectory();
+                        PortraitsManagerViewModel.Instance.CleanShowPortraitItems();
+                        RefreshDispalyData(false);
+                    }
+                };
+                return menuItem;
+
+                string? PrepareRestoreBackup()
+                {
+                    // 如果未保存,提醒保存
                     if (IsChanged)
                     {
                         if (
@@ -276,9 +310,10 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                                 }
                             ) is MessageBoxVM.Result.No
                         )
-                            return;
+                            return null;
                     }
                     CreateBackupDirectory();
+                    // 获取文件
                     var fileNames = OpenFileDialogVM.Show(
                         new()
                         {
@@ -287,22 +322,25 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                             InitialDirectory = _PMBackupDirectory
                         }
                     );
-                    if (fileNames?.FirstOrDefault(defaultValue: null) is not string fileName)
-                        return;
+                    return fileNames?.FirstOrDefault(defaultValue: null);
+                }
+
+                async Task<bool> UnArchiveAndReplaceFiles(string archiveFile)
+                {
                     CreateTempBackupDirectory();
                     if (
-                        await Utils.UnArchiveFileToDirectory(fileName, _PMTempBackupDirectory)
+                        await Utils.UnArchiveFileToDirectory(archiveFile, _PMTempBackupDirectory)
                         is false
                     )
                     {
                         MessageBoxVM.Show(new("文件解压错误"));
-                        return;
+                        return false;
                     }
                     if (
                         Utils.GetAllSubFiles(_PMTempFactionsBackupDirectory)
-                        is not List<FileInfo> fileList
+                        is not List<FileInfo> fileList || !fileList.Any()
                     )
-                        return;
+                        return false;
                     // 尝试备份原始数据
                     await BackupOriginalData();
                     // 从文件读取备份的势力肖像信息
@@ -318,6 +356,10 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                         else
                             FactionPortrait.SaveTo(factionFile, portraitData);
                     }
+                    return true;
+                }
+                void TryDeleteAllImages()
+                {
                     // 如果不是原版,则清除肖像
                     if (GroupId != PortraitsManagerViewModel._StrVanilla)
                     {
@@ -331,6 +373,9 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                     }
                     else
                         Close();
+                }
+                void MovePortraits()
+                {
                     // 获取上层文件夹名
                     var directoryName = Path.GetFileName(_BaseDirectory);
                     var portraitDirectory = Path.Combine(_PMTempBackupDirectory, directoryName);
@@ -338,13 +383,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                     Directory.Move(_PMTempPortraitsBackupDirectory, portraitDirectory);
                     // 移动肖像以替换原始文件
                     Utils.MoveDirectory(portraitDirectory, Path.GetDirectoryName(_BaseDirectory)!);
-                    // 初始化数据
-                    InitializeData();
-                    DeleteTempBackupDirectory();
-                    PortraitsManagerViewModel.Instance.CleanShowPortraitItems();
-                    RefreshDispalyData(false);
-                };
-                return menuItem;
+                }
             }
         }
         #endregion
@@ -1327,7 +1366,8 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         private void DeleteTempBackupDirectory()
         {
-            Directory.Delete(_PMTempBackupDirectory, true);
+            if (Directory.Exists(_PMTempBackupDirectory))
+                Directory.Delete(_PMTempBackupDirectory, true);
         }
 
         #endregion Save
