@@ -2,7 +2,7 @@
 
 **需要 [远行星号工具箱](https://github.com/Hakoyu/StarsectorTools)**
 
-![](https://s2.loli.net/2023/03/14/Xw8GhgVZHr6CNTn.png)
+![](https://s2.loli.net/2023/03/15/VydqwPpRmLUc7SZ.png)
 
 ## 功能介绍
 
