@@ -90,7 +90,7 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
             ;
             foreach (var item in maleArray)
             {
-                string path = item!.GetValue<string>();
+                string path = item!.GetValue<string>().Replace("/", "\\");
                 if (!File.Exists(Path.Combine(BaseDirectory, path)))
                 {
                     errSB.AppendLine($"\t{path}");
@@ -112,7 +112,7 @@ namespace StarsectorToolsExtension.PortraitsManager.Models
                 return errSB.AppendLine("\n女性肖像不存在");
             foreach (var item in femaleArray)
             {
-                string path = item!.GetValue<string>();
+                string path = item!.GetValue<string>().Replace("/", "\\");
                 if (!File.Exists($"{BaseDirectory}\\{path}"))
                 {
                     errSB.AppendLine($"\t{path}");

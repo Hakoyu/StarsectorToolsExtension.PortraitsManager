@@ -78,6 +78,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         partial void OnNowShowMalePortraitItemsChanged(ObservableCollection<ListBoxItemVM> value)
         {
+            NowShowMalePortraitItems.CollectionChanged += (s, e) => RefreshMaleGroupBoxHeader();
             RefreshMaleGroupBoxHeader();
         }
 
@@ -91,6 +92,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         partial void OnNowShowFemalePortraitItemsChanged(ObservableCollection<ListBoxItemVM> value)
         {
+            NowShowFemalePortraitItems.CollectionChanged += (s, e) => RefreshFemaleGroupBoxHeader();
             RefreshFemaleGroupBoxHeader();
         }
 
