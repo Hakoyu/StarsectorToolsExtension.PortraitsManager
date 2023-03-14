@@ -318,13 +318,19 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                         else
                             FactionPortrait.SaveTo(factionFile, portraitData);
                     }
-                    // 获取引用的肖像路径
-                    var imagePaths = _allImageStream.Keys.ToList();
-                    // 清空所有数据
-                    Close();
-                    // 删除引用的肖像
-                    foreach (var imagePath in imagePaths)
-                        File.Delete(Path.Combine(_BaseDirectory, imagePath));
+                    // 如果不是原版,则清除肖像
+                    if (GroupId != PortraitsManagerViewModel._StrVanilla)
+                    {
+                        // 获取引用的肖像路径
+                        var imagePaths = _allImageStream.Keys.ToList();
+                        // 清空所有数据
+                        Close();
+                        // 删除引用的肖像
+                        foreach (var imagePath in imagePaths)
+                            File.Delete(Path.Combine(_BaseDirectory, imagePath));
+                    }
+                    else
+                        Close();
                     // 获取上层文件夹名
                     var directoryName = Path.GetFileName(_BaseDirectory);
                     var portraitDirectory = Path.Combine(_PMTempBackupDirectory, directoryName);
@@ -1147,7 +1153,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             using var handler = PendingBoxVM.Show("正在保存");
             DeletePlanToDeleteFactions();
             var success = await SaveAllFactionPortrait();
-            DeletePlanToDeleteFiles();
+            DeletePlanToDeletePortraitFiles();
             IsChanged = success;
         }
 
@@ -1237,7 +1243,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             }
         }
 
-        private void DeletePlanToDeleteFiles()
+        private void DeletePlanToDeletePortraitFiles()
         {
             CreateTempBackupDirectory();
             var portraitPaths = _planToDeletePortraitPaths.OrderBy(s => s);
