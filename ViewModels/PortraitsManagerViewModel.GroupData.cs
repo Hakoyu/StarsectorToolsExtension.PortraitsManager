@@ -1170,7 +1170,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                         || factionPortrait.Value.FemalePortraitsPath.Count is 0
                     )
                     {
-                        MessageBoxVM.Show(new("保存失败,在原版中,男女至少各包含一个肖像"));
+                        MessageBoxVM.Show(new("保存失败,在原版中,男女至少各一个肖像"));
                         return false;
                     }
                 }
