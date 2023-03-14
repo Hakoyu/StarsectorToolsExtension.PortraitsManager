@@ -21,9 +21,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         public void Close()
         {
-            foreach (var groupData in AllGroupDatas)
-                groupData.Close();
-            AddFactionWindowViewModel?.Close();
+            VanillaGroupData.Close();
         }
 
         public void DropPortraitFiles(Array array, Gender gender)
@@ -33,19 +31,13 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 MessageBoxVM.Show(new("你必须选择一个势力"));
                 return;
             }
-            _nowGroupData.TryAddPortrait(
+            VanillaGroupData.TryAddPortrait(
                 array.OfType<string>(),
                 _nowSelectedFactionItem.Id!,
                 gender
             );
             OnNowShowMalePortraitItemsChanged(null!);
             OnNowShowFemalePortraitItemsChanged(null!);
-        }
-
-        private void ComboBox_GroupList_SelectionChangedEvent(ComboBoxItemVM item)
-        {
-            ChangeAllGroupData(item.Tag!.ToString()!);
-            CleanShowPortraitItems();
         }
 
         public void CleanShowPortraitItems()
@@ -56,160 +48,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             RefreshFemaleGroupBoxHeader();
         }
 
-        private void InitializeGroup()
-        {
-            GetAllUserGroup();
-        }
-
-        private void GetAllUserGroup()
-        {
-            foreach (var group in ModInfos.AllUserGroups)
-            {
-                ComboBox_GroupList.Add(new() { Content = group.Key, Tag = group.Key });
-            }
-        }
-
-        private void CleanFactionFilter()
-        {
-            foreach (var groupData in AllGroupDatas)
-            {
-                if (_originalFactionItemsSource.TryGetValue(groupData.GroupId, out var itemsSource))
-                    groupData.FactionList.ItemsSource = itemsSource;
-                groupData.IsEnabled = true;
-            }
-            _originalFactionItemsSource.Clear();
-        }
-
-        private void FactionFilter(string text)
-        {
-            foreach (var groupData in AllGroupDatas)
-            {
-                ObservableCollection<ListBoxItemVM> tempFactionList = new();
-                // 使用已保存的原始分组
-                if (
-                    !_originalFactionItemsSource.TryGetValue(groupData.GroupId, out var itemsSource)
-                )
-                    itemsSource = groupData.FactionList.ItemsSource;
-                foreach (var item in itemsSource)
-                {
-                    // 搜索I18n名称和ID
-                    if (
-                        item.Id!.Contains(text, StringComparison.OrdinalIgnoreCase)
-                        || item.Name!.Contains(text, StringComparison.OrdinalIgnoreCase)
-                    )
-                    {
-                        tempFactionList.Add(item);
-                    }
-                }
-                if (tempFactionList.Any())
-                {
-                    // 如果过滤列表中含有项目,则保存原始列表并替换显示列表
-                    _originalFactionItemsSource.TryAdd(
-                        groupData.GroupId,
-                        groupData.FactionList.ItemsSource
-                    );
-                    groupData.FactionList.ItemsSource = tempFactionList;
-                    // 如果已选中的势力未包含在过滤后的列表中,清除选中项
-                    if (!tempFactionList.Contains(_nowSelectedFactionItem))
-                        CleanShowPortraitItems();
-                }
-                else
-                {
-                    // 如果过滤列表没有项目,则禁用分组点击并取消展开
-                    groupData.IsEnabled = false;
-                    groupData.IsExpanded = false;
-                }
-            }
-        }
-
         #region ChangeAllGroupData
-
-        private void ChangeAllGroupData(string groupTypeName)
-        {
-            FactionFilterText = string.Empty;
-            CheckRemindSave();
-            Close();
-            AllGroupDatas.Clear();
-            if (groupTypeName == _StrVanilla)
-            {
-                var groupData = GetGroupData(_StrVanilla, "原版", GameInfo.CoreDirectory)!;
-                AllGroupDatas.Add(groupData);
-                groupData.IsExpanded = true;
-            }
-            else if (groupTypeName == nameof(ModTypeGroup.Enabled))
-            {
-                GetEnabledModsGroupData();
-            }
-            else if (groupTypeName == nameof(ModTypeGroup.Collected))
-            {
-                GetCollectedModsGroupData();
-            }
-            else
-            {
-                GetUserGroupGroupData(groupTypeName);
-            }
-            GC.Collect();
-        }
-
-        private void CheckRemindSave()
-        {
-            if (!IsRemindSave)
-                return;
-            if (
-                MessageBoxVM.Show(
-                    new("你有未保存的数据, 需要保存吗?")
-                    {
-                        Icon = MessageBoxVM.Icon.Question,
-                        Button = MessageBoxVM.Button.YesNo
-                    }
-                )
-                is not MessageBoxVM.Result.Yes
-            )
-                return;
-            Save();
-        }
-
-        private void GetEnabledModsGroupData()
-        {
-            foreach (var modId in ModInfos.AllEnabledModIds)
-            {
-                var modInfo = ModInfos.AllModInfos[modId];
-                if (
-                    GetGroupData(modInfo.Id, modInfo.Name, modInfo.ModDirectory)
-                    is not GroupData groupData
-                )
-                    continue;
-                AllGroupDatas.Add(groupData);
-            }
-        }
-
-        private void GetCollectedModsGroupData()
-        {
-            foreach (var modId in ModInfos.AllCollectedModIds)
-            {
-                var modInfo = ModInfos.AllModInfos[modId];
-                if (
-                    GetGroupData(modInfo.Id, modInfo.Name, modInfo.ModDirectory)
-                    is not GroupData groupData
-                )
-                    continue;
-                AllGroupDatas.Add(groupData);
-            }
-        }
-
-        private void GetUserGroupGroupData(string userGroup)
-        {
-            foreach (var modId in ModInfos.AllUserGroups[userGroup])
-            {
-                var modInfo = ModInfos.AllModInfos[modId];
-                if (
-                    GetGroupData(modInfo.Id, modInfo.Name, modInfo.ModDirectory)
-                    is not GroupData groupData
-                )
-                    continue;
-                AllGroupDatas.Add(groupData);
-            }
-        }
 
         private GroupData? GetGroupData(string groupId, string groupName, string baseDirectory)
         {
@@ -231,7 +70,7 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
             _nowSelectedFactionItem = item;
             if (_nowSelectedFactionItem.Tag is not GroupData groupData)
                 return;
-            _nowGroupData = groupData;
+            VanillaGroupData = groupData;
             MalePortraitsFilterText = string.Empty;
             FemalePortraitsFilterText = string.Empty;
             NowShowMalePortraitItems = groupData.MaleFactionPortraitItems[
@@ -244,23 +83,23 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
                 MalePortraitFilter(MalePortraitsFilterText);
             NowShowFemalePortraitItems.CollectionChanged += (s, e) =>
                 FemalePortraitFilter(FemalePortraitsFilterText);
-            Logger.Info($"切换至 分组: {_nowGroupData.Header} 势力: {_nowSelectedFactionItem.Name}");
+            Logger.Info($"切换至 分组: {VanillaGroupData.Header} 势力: {_nowSelectedFactionItem.Name}");
         }
 
         private void MalePortraitFilter(string filterText)
         {
-            if (_nowGroupData is null)
+            if (VanillaGroupData is null)
                 return;
             if (string.IsNullOrWhiteSpace(filterText))
             {
-                NowShowMalePortraitItems = _nowGroupData.MaleFactionPortraitItems[
+                NowShowMalePortraitItems = VanillaGroupData.MaleFactionPortraitItems[
                     _nowSelectedFactionItem.Id!
                 ];
             }
             else
             {
                 NowShowMalePortraitItems = new(
-                    _nowGroupData.MaleFactionPortraitItems[_nowSelectedFactionItem.Id!].Where(
+                    VanillaGroupData.MaleFactionPortraitItems[_nowSelectedFactionItem.Id!].Where(
                         i =>
                             i.Name!
                                 .ToString()!
@@ -273,18 +112,18 @@ namespace StarsectorToolsExtension.PortraitsManager.ViewModels
 
         private void FemalePortraitFilter(string filterText)
         {
-            if (_nowGroupData is null)
+            if (VanillaGroupData is null)
                 return;
             if (string.IsNullOrWhiteSpace(filterText))
             {
-                NowShowFemalePortraitItems = _nowGroupData.FemaleFactionPortraitItems[
+                NowShowFemalePortraitItems = VanillaGroupData.FemaleFactionPortraitItems[
                     _nowSelectedFactionItem.Id!
                 ];
             }
             else
             {
                 NowShowFemalePortraitItems = new(
-                    _nowGroupData.FemaleFactionPortraitItems[_nowSelectedFactionItem.Id!].Where(
+                    VanillaGroupData.FemaleFactionPortraitItems[_nowSelectedFactionItem.Id!].Where(
                         i =>
                             i.Content!
                                 .ToString()!
